@@ -156,3 +156,7 @@ EMAIL_ALERT_MIN_SCORE = 35
 
 # Zapis historii do pliku JSON (stan, do wykres\u00f3w/audytu).
 STATE_FILE = "fx_state.json"
+
+# Stan wysylki maila: data ostatniej wysylki (limit raz/dobe) + zestaw par
+# korzystnych z poprzedniego uruchomienia (wykrycie przeskoku na korzystna).
+EMAIL_STATE_FILE = "fx_email_state.json"

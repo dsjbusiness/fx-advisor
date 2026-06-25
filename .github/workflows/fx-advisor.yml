@@ -44,5 +44,6 @@ jobs:
           # fx_state.json jest w .gitignore (blokuje lokalne commity), wiec tu
           # wymuszamy dodanie -f: to jedyne miejsce, ktore ma go utrwalac w repo.
           git add -f docs/index.html fx_state.json
+          [ -f fx_email_state.json ] && git add -f fx_email_state.json || true
           git commit -m "FX report $(date -u +%Y-%m-%d)" || echo "brak zmian"
           git push || echo "nie uda\u0142o si\u0119 push (sprawd\u017a permissions: contents: write)"

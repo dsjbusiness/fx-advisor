@@ -50,30 +50,90 @@ def text_summary(analysis):
     return "\n".join(lines)
 
 
-def _email_on(analysis):
-    """Czy wys\u0142a\u0107 maila?
-
-    Wysy\u0142amy TYLKO gdy kt\u00f3ra\u015b z g\u0142\u00f3wnych par jest teraz w KORZYSTNYM momencie
-    na wymian\u0119: favorability dodatnia i >= progu (etykieta "Korzystny").
-    "Niekorzystny" (mocny minus) maila NIE wysy\u0142a - to nie jest dobry moment.
-    Wydarzenia bank\u00f3w centralnych same z siebie te\u017c NIE wyzwalaj\u0105 maila; trafiaj\u0105
-    jedynie do tre\u015bci jako kontekst, gdy mail i tak wychodzi z powodu korzystnej pary.
-    """
-    enabled = os.environ.get("FX_EMAIL_ENABLED", "1" if config.EMAIL_ENABLED else "0") == "1"
-    if not enabled:
-        return False
+def _favorable_set(analysis):
+    """Slownik {id glownego kierunku: czy KORZYSTNY teraz}.
+    Korzystny = favorability dodatnia i >= progu (etykieta "Korzystny")."""
+    thr = config.EMAIL_ALERT_MIN_SCORE
+    out = {}
     for r in analysis["results"]:
-        if r["direction"]["primary"] and r["favorability"] >= config.EMAIL_ALERT_MIN_SCORE:
-            return True
-    return False
+        if r["direction"]["primary"]:
+            out[r["direction"]["id"]] = bool(r["favorability"] >= thr)
+    return out
+
+
+def _email_state_path(path=None):
+    return path or getattr(config, "EMAIL_STATE_FILE", "fx_email_state.json")
+
+
+def load_email_state(path=None):
+    """Stan wysylki maila: kiedy ostatnio wyslano + zestaw korzystnych par z
+    poprzedniego uruchomienia (do wykrycia przeskoku na korzystna)."""
+    p = _email_state_path(path)
+    if os.path.exists(p):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                data.setdefault("last_sent_date", None)
+                data.setdefault("prev_favorable", {})
+                return data
+        except (ValueError, OSError):
+            pass
+    return {"last_sent_date": None, "prev_favorable": {}}
+
+
+def save_email_state(state, path=None):
+    p = _email_state_path(path)
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+    return p
+
+
+def decide_email(analysis, state):
+    """Czysta decyzja, bez wysylki i bez zapisu: (wyslac, powod, nowy_stan).
+
+    Zasady:
+      - mail tylko gdy ktoras GLOWNA para jest teraz KORZYSTNA,
+      - najwyzej raz na dobe (doba wg daty z generated_at),
+      - WYJATEK od limitu raz/dobe: jesli ktoras para wlasnie przeskoczyla na
+        korzystna (jest korzystna teraz, a nie byla przy poprzednim uruchomieniu)
+        - wyslij nawet jesli mail juz dzis poszedl.
+    """
+    today = str(analysis["generated_at"])[:10]
+    fav_now = _favorable_set(analysis)
+    prev_fav = (state or {}).get("prev_favorable") or {}
+    any_fav = any(fav_now.values())
+    transition = any(v and not prev_fav.get(d, False) for d, v in fav_now.items())
+    sent_today = (state or {}).get("last_sent_date") == today
+
+    new_state = {
+        "last_sent_date": (state or {}).get("last_sent_date"),
+        "prev_favorable": fav_now,
+    }
+    if not any_fav:
+        return False, "pominieto (zadna glowna para nie jest korzystna)", new_state
+    if sent_today and not transition:
+        return False, "pominieto (mail juz dzis wyslany; brak nowej pary korzystnej)", new_state
+    powod = "nagla zmiana pary na korzystna" if (sent_today and transition) else "para korzystna"
+    return True, powod, new_state
 
 
 def send_email(analysis, html_body):
-    if not _email_on(analysis):
-        return False, "pomini\u0119to (brak mocnego sygna\u0142u / wydarzenia lub wy\u0142\u0105czone)"
+    enabled = os.environ.get("FX_EMAIL_ENABLED", "1" if config.EMAIL_ENABLED else "0") == "1"
+    if not enabled:
+        return False, "pominieto (wysylka wylaczona)"
+
+    state = load_email_state()
+    do_send, why, new_state = decide_email(analysis, state)
+    if not do_send:
+        save_email_state(new_state)   # zapamietaj biezacy zestaw korzystnych par
+        return False, why
+
     api_key = os.environ.get("RESEND_API_KEY")
     if not api_key:
+        save_email_state(new_state)
         return False, "brak RESEND_API_KEY"
+
     payload = {
         "from": os.environ.get("FX_EMAIL_FROM", config.EMAIL_FROM),
         "to": [os.environ.get("FX_EMAIL_TO", config.EMAIL_TO)],
@@ -96,17 +156,21 @@ def send_email(analysis, html_body):
     )
     try:
         with urlopen(req, timeout=20) as resp:
-            return True, "wys\u0142ano (HTTP {})".format(resp.status)
+            new_state["last_sent_date"] = str(analysis["generated_at"])[:10]
+            save_email_state(new_state)
+            return True, "wyslano (HTTP {}) - {}".format(resp.status, why)
     except HTTPError as e:
-        # Resend zwraca szczeg\u00f3\u0142y b\u0142\u0119du w ciele odpowiedzi (np. niezweryfikowana
+        # Resend zwraca szczegoly bledu w ciele odpowiedzi (np. niezweryfikowana
         # domena nadawcy) - bez tego widzisz samo "403 Forbidden".
         try:
             body = e.read().decode("utf-8", "replace").strip()
         except Exception:
             body = ""
-        return False, "b\u0142\u0105d wysy\u0142ki: HTTP {} {}".format(e.code, body)
+        save_email_state(new_state)
+        return False, "blad wysylki: HTTP {} {}".format(e.code, body)
     except URLError as e:
-        return False, "b\u0142\u0105d wysy\u0142ki: {}".format(e)
+        save_email_state(new_state)
+        return False, "blad wysylki: {}".format(e)
 
 
 def save_state(analysis, path=None):
