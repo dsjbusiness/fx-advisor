@@ -41,6 +41,8 @@ jobs:
         run: |
           git config user.name "fx-advisor-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add docs/index.html fx_state.json
+          # fx_state.json jest w .gitignore (blokuje lokalne commity), wiec tu
+          # wymuszamy dodanie -f: to jedyne miejsce, ktore ma go utrwalac w repo.
+          git add -f docs/index.html fx_state.json
           git commit -m "FX report $(date -u +%Y-%m-%d)" || echo "brak zmian"
           git push || echo "nie uda\u0142o si\u0119 push (sprawd\u017a permissions: contents: write)"
