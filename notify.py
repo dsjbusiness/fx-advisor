@@ -81,7 +81,14 @@ def send_email(analysis, html_body):
     req = Request(
         "https://api.resend.com/emails",
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
+        headers={
+            "Authorization": "Bearer " + api_key,
+            "Content-Type": "application/json",
+            # Bez tego urllib wysyla UA "Python-urllib/3.x", ktory bot-protection
+            # Cloudflare przed api.resend.com odrzuca z bledem 1010 (403).
+            "User-Agent": "fx-advisor/1.0 (+https://github.com/dsjbusiness/fx-advisor)",
+            "Accept": "application/json",
+        },
         method="POST",
     )
     try:
