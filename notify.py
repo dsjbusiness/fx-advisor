@@ -87,7 +87,15 @@ def send_email(analysis, html_body):
     try:
         with urlopen(req, timeout=20) as resp:
             return True, "wys\u0142ano (HTTP {})".format(resp.status)
-    except (URLError, HTTPError) as e:
+    except HTTPError as e:
+        # Resend zwraca szczeg\u00f3\u0142y b\u0142\u0119du w ciele odpowiedzi (np. niezweryfikowana
+        # domena nadawcy) - bez tego widzisz samo "403 Forbidden".
+        try:
+            body = e.read().decode("utf-8", "replace").strip()
+        except Exception:
+            body = ""
+        return False, "b\u0142\u0105d wysy\u0142ki: HTTP {} {}".format(e.code, body)
+    except URLError as e:
         return False, "b\u0142\u0105d wysy\u0142ki: {}".format(e)
 
 
