@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FX Advisor - przegląd wymiany walut</title>
+<style>
+  :root {
+    --bg:#eceff3; --surface:#ffffff; --ink:#14212e; --muted:#5f7180;
+    --faint:#8a99a6; --line:#dde4ea; --accent:#0b6b7a;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:28px 20px 56px; }
+  .mono { font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; }
+
+  header.top { display:flex; justify-content:space-between; align-items:flex-end;
+    flex-wrap:wrap; gap:12px; border-bottom:2px solid var(--ink); padding-bottom:16px; }
+  .top h1 { font-size:clamp(20px,3vw,26px); margin:0; letter-spacing:-0.02em; }
+  .top .sub { color:var(--muted); font-size:13px; margin-top:4px; }
+  .top .meta { text-align:right; font-size:12px; color:var(--muted);
+    font-variant-numeric:tabular-nums; }
+  .top .meta b { color:var(--ink); font-weight:600; }
+
+  .caveat { margin:18px 0 6px; padding:12px 14px; border-left:3px solid var(--accent);
+    background:#e9f1f3; color:#143b42; font-size:13px; border-radius:0 6px 6px 0; }
+  .caveat b { color:#0b6b7a; }
+  .demo-banner { margin:14px 0; padding:8px 12px; background:#fbf2df; color:#8a6212;
+    font-size:12px; border-radius:6px; letter-spacing:0.02em; }
+
+  h2 { font-size:14px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--muted); margin:34px 0 14px; font-weight:600; }
+  .ctx-h { margin-top:30px; }
+
+  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+  .grid-ctx { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:18px 18px 16px; display:flex; flex-direction:column; }
+  .card-context { background:#f7f9fb; }
+  .card-h { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .dir { font-size:18px; font-weight:650; letter-spacing:-0.01em; }
+  .dir-sub { font-size:12px; color:var(--faint); margin-top:2px; }
+  .rate { text-align:right; }
+  .rate-v { font-size:18px; font-weight:600; font-variant-numeric:tabular-nums;
+    color:var(--ink); }
+  .rate-l { font-size:11px; color:var(--faint); }
+
+  .verdict { display:flex; justify-content:space-between; align-items:center;
+    margin:14px 0 12px; padding:9px 12px; border-radius:8px; font-weight:650; }
+  .verdict-l { font-size:15px; }
+  .verdict-c { font-size:11px; font-weight:500; opacity:0.85; text-transform:lowercase; }
+
+  .score-row { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+  .score-end { font-size:9.5px; text-transform:uppercase; letter-spacing:0.04em;
+    color:var(--faint); white-space:nowrap; }
+  .sbar { position:relative; flex:1; height:8px; background:#eef2f5; border-radius:5px; }
+  .sbar-fill { position:absolute; top:0; height:100%; border-radius:5px;
+    transition:width .5s ease, left .5s ease; }
+  .sbar-zero { position:absolute; left:50%; top:-3px; width:1.5px; height:14px;
+    background:var(--faint); transform:translateX(-50%); }
+
+  .rb-wrap { margin:10px 0 14px; }
+  .rb-track { position:relative; height:10px; border-radius:5px; border:1px solid var(--line); }
+  .rb-mean { position:absolute; top:-3px; width:1.5px; height:16px; background:var(--faint); }
+  .rb-now { position:absolute; top:50%; transform:translate(-50%,-50%); width:11px; height:11px;
+    background:var(--ink); border:2px solid #fff; border-radius:50%;
+    box-shadow:0 0 0 1px var(--ink); }
+  .rb-now span { position:absolute; top:-19px; left:50%; transform:translateX(-50%);
+    font-size:10px; color:var(--ink); font-weight:600; white-space:nowrap; }
+  .rb-ends { display:flex; justify-content:space-between; margin-top:7px;
+    font-size:10.5px; color:var(--faint); font-variant-numeric:tabular-nums; }
+  .rb-mid { color:var(--muted); }
+
+  .spark-wrap { margin:2px 0 14px; }
+  .spark { width:100%; height:44px; display:block; }
+
+  .metrics { display:grid; grid-template-columns:1fr 1fr; gap:8px 14px;
+    padding:12px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .metrics > div { display:flex; justify-content:space-between; font-size:12px; }
+  .m-l { color:var(--muted); }
+  .m-v { font-weight:600; font-variant-numeric:tabular-nums; }
+
+  .reco { margin-top:13px; }
+  .reco-a { font-weight:650; font-size:13.5px; color:var(--accent); }
+  .reco-w { font-size:12.5px; color:#3a4956; margin:5px 0 0; }
+  .notes { margin:9px 0 0; padding-left:16px; }
+  .notes li { font-size:11.5px; color:var(--muted); margin-bottom:4px; }
+
+  .events { margin-top:38px; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:18px 20px; }
+  .events h2 { margin:0 0 4px; }
+  .events-note { font-size:12.5px; color:var(--muted); margin:0 0 12px; }
+  .events-none p { font-size:13px; color:var(--muted); margin:0; }
+  .ev-table { width:100%; border-collapse:collapse; }
+  .ev-table td { padding:9px 6px; border-top:1px solid var(--line); font-size:13px;
+    vertical-align:middle; }
+  .ev-d { font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap; }
+  .ev-d span { display:block; font-size:10.5px; color:var(--faint); font-weight:400; }
+  .ev-bank { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px;
+    font-weight:600; }
+  .ev-EUR { background:#e9f1f3; color:#0b6b7a; }
+  .ev-USD { background:#edeff5; color:#3d5a99; }
+  .ev-PLN { background:#f8eae8; color:#b3382f; }
+  .ev-ccy { text-align:right; color:var(--faint); font-size:11px; font-weight:600; }
+
+  footer { margin-top:34px; padding-top:18px; border-top:1px solid var(--line);
+    font-size:11.5px; color:var(--faint); }
+  footer p { margin:0 0 8px; }
+  footer b { color:var(--muted); }
+
+  @media (max-width:560px) {
+    .verdict { flex-direction:column; align-items:flex-start; gap:3px; }
+    .top .meta { text-align:left; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .sbar-fill { transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>FX Advisor</h1>
+      <div class="sub">Wsparcie decyzji o wymianie walut · okno 14 dni</div>
+    </div>
+    <div class="meta">
+      wygenerowano: <b>2026-06-25 12:27</b><br>
+      dane (fixing EBC): <b>2026-06-24</b>
+    </div>
+  </header>
+
+  
+
+  <div class="caveat">
+    <b>Jak to czytać.</b> To nie jest prognoza kursu ani porada inwestycyjna.
+    Narzędzie pokazuje, czy <b>dziś</b> dostajesz kurs korzystny na tle ostatnich
+    tygodni, w którą stronę idzie krótka tendencja i czy w Twoim oknie wypada
+    decyzja banku centralnego. Przy cyklicznych wymianach najlepszy efekt daje zwykle
+    <b>podział kwoty na transze</b>, a nie polowanie na jeden idealny dzień.
+  </div>
+
+  <h2>Twoje kierunki wymiany</h2>
+  <div class="grid">
+    <article class="card card-primary" style="--accent:#1f7a5c">
+      <header class="card-h">
+        <div>
+          <div class="dir">EUR → PLN</div>
+          <div class="dir-sub">Sprzedaż EUR, zakup PLN</div>
+        </div>
+        <div class="rate">
+          <div class="rate-v">4.2878</div>
+          <div class="rate-l">kurs (EURPLN)</div>
+        </div>
+      </header>
+
+      <div class="verdict" style="color:#1f7a5c;background:#e7f3ed">
+        <span class="verdict-l">Korzystny</span>
+        <span class="verdict-c">pewność: Wysoka</span>
+      </div>
+
+      <div class="score-row">
+        <span class="score-end neg">niekorzystnie</span>
+        <div class="sbar" role="img" aria-label="ocena 86 na 100"><div class="sbar-fill" style="left:50.00%;width:42.77%;background:#1f7a5c"></div><div class="sbar-zero"></div></div>
+        <span class="score-end pos">korzystnie</span>
+      </div>
+
+      <div class="rb-wrap"><div class="rb-track" style="background:linear-gradient(90deg, rgba(179,56,47,0.10), rgba(31,122,92,0.16))"><div class="rb-mean" style="left:34.32%" title="średnia"></div><div class="rb-now" style="left:98.06%"><span>dziś</span></div></div><div class="rb-ends"><span>4.2270</span><span class="rb-mid">średnia 4.2483</span><span>4.2890</span></div></div>
+
+      <div class="spark-wrap"><svg class="spark" viewBox="0 0 240 44" preserveAspectRatio="none" role="img" aria-label="wykres ostatnich kursów"><polygon points="2,42 2.0,2.5 6.0,2.0 10.0,8.3 14.0,4.3 18.0,10.8 22.0,24.7 26.0,23.4 30.0,31.4 34.0,24.4 38.0,32.0 42.0,32.8 46.0,32.1 50.0,38.3 54.0,37.8 58.0,40.4 62.0,29.2 66.0,31.8 70.0,33.4 74.0,30.8 78.0,28.6 82.0,26.0 86.0,20.4 90.0,22.6 94.0,24.4 98.0,38.1 102.0,42.0 106.0,38.9 110.0,33.7 114.0,28.5 118.0,26.3 122.0,35.0 126.0,29.4 130.0,30.8 134.0,31.4 138.0,23.9 142.0,28.3 146.0,32.3 150.0,37.2 154.0,39.1 158.0,35.9 162.0,37.8 166.0,41.7 170.0,38.1 174.0,37.2 178.0,34.7 182.0,35.7 186.0,37.6 190.0,32.1 194.0,35.4 198.0,27.8 202.0,26.0 206.0,28.5 210.0,29.7 214.0,31.7 218.0,33.0 222.0,22.0 226.0,19.7 230.0,15.5 234.0,6.2 238.0,2.8 238.0,42" fill="#1f7a5c" fill-opacity="0.07"/><polyline points="2.0,2.5 6.0,2.0 10.0,8.3 14.0,4.3 18.0,10.8 22.0,24.7 26.0,23.4 30.0,31.4 34.0,24.4 38.0,32.0 42.0,32.8 46.0,32.1 50.0,38.3 54.0,37.8 58.0,40.4 62.0,29.2 66.0,31.8 70.0,33.4 74.0,30.8 78.0,28.6 82.0,26.0 86.0,20.4 90.0,22.6 94.0,24.4 98.0,38.1 102.0,42.0 106.0,38.9 110.0,33.7 114.0,28.5 118.0,26.3 122.0,35.0 126.0,29.4 130.0,30.8 134.0,31.4 138.0,23.9 142.0,28.3 146.0,32.3 150.0,37.2 154.0,39.1 158.0,35.9 162.0,37.8 166.0,41.7 170.0,38.1 174.0,37.2 178.0,34.7 182.0,35.7 186.0,37.6 190.0,32.1 194.0,35.4 198.0,27.8 202.0,26.0 206.0,28.5 210.0,29.7 214.0,31.7 218.0,33.0 222.0,22.0 226.0,19.7 230.0,15.5 234.0,6.2 238.0,2.8" fill="none" stroke="#1f7a5c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="238.0" cy="2.8" r="2.6" fill="#1f7a5c"/></svg></div>
+
+      <div class="metrics">
+        <div><span class="m-l">Położenie</span><span class="m-v">97·percentyl</span></div>
+        <div><span class="m-l">Tendencja ↗</span><span class="m-v">rośnie</span></div>
+        <div><span class="m-l">RSI</span><span class="m-v">72 · wykupienie</span></div>
+        <div><span class="m-l">Zmienność</span><span class="m-v">normalna</span></div>
+      </div>
+
+      <div class="reco">
+        <div class="reco-a">Korzystnie - możesz rozłożyć w czasie</div>
+        <p class="reco-w">Poziom jest dobry i nadal poprawia się na Twoją korzyść. Możesz wymienić część teraz, a resztę obserwować.</p>
+        <ul class="notes"><li>W oknie wypada Decyzja RPP ws. stóp (z projekcją) (NBP, za 13 dni) - może gwałtownie ruszyć kursem; rozważ wymianę przed posiedzeniem lub podział.</li></ul>
+      </div>
+    </article>
+    
+    <article class="card card-primary" style="--accent:#b3382f">
+      <header class="card-h">
+        <div>
+          <div class="dir">PLN → EUR</div>
+          <div class="dir-sub">Sprzedaż PLN, zakup EUR</div>
+        </div>
+        <div class="rate">
+          <div class="rate-v">4.2878</div>
+          <div class="rate-l">kurs (EURPLN)</div>
+        </div>
+      </header>
+
+      <div class="verdict" style="color:#b3382f;background:#f8eae8">
+        <span class="verdict-l">Niekorzystny</span>
+        <span class="verdict-c">pewność: Wysoka</span>
+      </div>
+
+      <div class="score-row">
+        <span class="score-end neg">niekorzystnie</span>
+        <div class="sbar" role="img" aria-label="ocena -86 na 100"><div class="sbar-fill" style="left:7.23%;width:42.77%;background:#b3382f"></div><div class="sbar-zero"></div></div>
+        <span class="score-end pos">korzystnie</span>
+      </div>
+
+      <div class="rb-wrap"><div class="rb-track" style="background:linear-gradient(90deg, rgba(31,122,92,0.16), rgba(179,56,47,0.10))"><div class="rb-mean" style="left:34.32%" title="średnia"></div><div class="rb-now" style="left:98.06%"><span>dziś</span></div></div><div class="rb-ends"><span>4.2270</span><span class="rb-mid">średnia 4.2483</span><span>4.2890</span></div></div>
+
+      <div class="spark-wrap"><svg class="spark" viewBox="0 0 240 44" preserveAspectRatio="none" role="img" aria-label="wykres ostatnich kursów"><polygon points="2,42 2.0,2.5 6.0,2.0 10.0,8.3 14.0,4.3 18.0,10.8 22.0,24.7 26.0,23.4 30.0,31.4 34.0,24.4 38.0,32.0 42.0,32.8 46.0,32.1 50.0,38.3 54.0,37.8 58.0,40.4 62.0,29.2 66.0,31.8 70.0,33.4 74.0,30.8 78.0,28.6 82.0,26.0 86.0,20.4 90.0,22.6 94.0,24.4 98.0,38.1 102.0,42.0 106.0,38.9 110.0,33.7 114.0,28.5 118.0,26.3 122.0,35.0 126.0,29.4 130.0,30.8 134.0,31.4 138.0,23.9 142.0,28.3 146.0,32.3 150.0,37.2 154.0,39.1 158.0,35.9 162.0,37.8 166.0,41.7 170.0,38.1 174.0,37.2 178.0,34.7 182.0,35.7 186.0,37.6 190.0,32.1 194.0,35.4 198.0,27.8 202.0,26.0 206.0,28.5 210.0,29.7 214.0,31.7 218.0,33.0 222.0,22.0 226.0,19.7 230.0,15.5 234.0,6.2 238.0,2.8 238.0,42" fill="#b3382f" fill-opacity="0.07"/><polyline points="2.0,2.5 6.0,2.0 10.0,8.3 14.0,4.3 18.0,10.8 22.0,24.7 26.0,23.4 30.0,31.4 34.0,24.4 38.0,32.0 42.0,32.8 46.0,32.1 50.0,38.3 54.0,37.8 58.0,40.4 62.0,29.2 66.0,31.8 70.0,33.4 74.0,30.8 78.0,28.6 82.0,26.0 86.0,20.4 90.0,22.6 94.0,24.4 98.0,38.1 102.0,42.0 106.0,38.9 110.0,33.7 114.0,28.5 118.0,26.3 122.0,35.0 126.0,29.4 130.0,30.8 134.0,31.4 138.0,23.9 142.0,28.3 146.0,32.3 150.0,37.2 154.0,39.1 158.0,35.9 162.0,37.8 166.0,41.7 170.0,38.1 174.0,37.2 178.0,34.7 182.0,35.7 186.0,37.6 190.0,32.1 194.0,35.4 198.0,27.8 202.0,26.0 206.0,28.5 210.0,29.7 214.0,31.7 218.0,33.0 222.0,22.0 226.0,19.7 230.0,15.5 234.0,6.2 238.0,2.8" fill="none" stroke="#b3382f" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="238.0" cy="2.8" r="2.6" fill="#b3382f"/></svg></div>
+
+      <div class="metrics">
+        <div><span class="m-l">Położenie</span><span class="m-v">97·percentyl</span></div>
+        <div><span class="m-l">Tendencja ↗</span><span class="m-v">rośnie</span></div>
+        <div><span class="m-l">RSI</span><span class="m-v">72 · wykupienie</span></div>
+        <div><span class="m-l">Zmienność</span><span class="m-v">normalna</span></div>
+      </div>
+
+      <div class="reco">
+        <div class="reco-a">Niekorzystnie i pogarsza się</div>
+        <p class="reco-w">Kurs jest słaby i nadal idzie przeciw Tobie. Jeśli nie musisz - wstrzymaj się; jeśli musisz - podziel na mniejsze transze.</p>
+        <ul class="notes"><li>W oknie wypada Decyzja RPP ws. stóp (z projekcją) (NBP, za 13 dni) - może gwałtownie ruszyć kursem; rozważ wymianę przed posiedzeniem lub podział.</li></ul>
+      </div>
+    </article>
+    
+    <article class="card card-primary" style="--accent:#b3382f">
+      <header class="card-h">
+        <div>
+          <div class="dir">EUR → USD</div>
+          <div class="dir-sub">Sprzedaż EUR, zakup USD</div>
+        </div>
+        <div class="rate">
+          <div class="rate-v">1.1340</div>
+          <div class="rate-l">kurs (EURUSD)</div>
+        </div>
+      </header>
+
+      <div class="verdict" style="color:#b3382f;background:#f8eae8">
+        <span class="verdict-l">Niekorzystny</span>
+        <span class="verdict-c">pewność: Wysoka</span>
+      </div>
+
+      <div class="score-row">
+        <span class="score-end neg">niekorzystnie</span>
+        <div class="sbar" role="img" aria-label="ocena -89 na 100"><div class="sbar-fill" style="left:5.32%;width:44.68%;background:#b3382f"></div><div class="sbar-zero"></div></div>
+        <span class="score-end pos">korzystnie</span>
+      </div>
+
+      <div class="rb-wrap"><div class="rb-track" style="background:linear-gradient(90deg, rgba(179,56,47,0.10), rgba(31,122,92,0.16))"><div class="rb-mean" style="left:65.74%" title="średnia"></div><div class="rb-now" style="left:0.00%"><span>dziś</span></div></div><div class="rb-ends"><span>1.1340</span><span class="rb-mid">średnia 1.1640</span><span>1.1797</span></div></div>
+
+      <div class="spark-wrap"><svg class="spark" viewBox="0 0 240 44" preserveAspectRatio="none" role="img" aria-label="wykres ostatnich kursów"><polygon points="2,42 2.0,29.4 6.0,28.2 10.0,18.8 14.0,25.8 18.0,23.0 22.0,10.0 26.0,11.8 30.0,9.5 34.0,11.9 38.0,2.4 42.0,3.5 46.0,3.3 50.0,2.0 54.0,5.2 58.0,4.6 62.0,7.6 66.0,11.0 70.0,9.4 74.0,6.2 78.0,12.2 82.0,10.0 86.0,10.3 90.0,10.5 94.0,11.7 98.0,5.1 102.0,4.4 106.0,5.2 110.0,4.8 114.0,7.2 118.0,9.2 122.0,10.3 126.0,16.8 130.0,15.0 134.0,17.5 138.0,19.2 142.0,19.3 146.0,19.7 150.0,15.5 154.0,16.3 158.0,16.0 162.0,17.8 166.0,15.4 170.0,15.2 174.0,15.0 178.0,18.0 182.0,15.7 186.0,15.7 190.0,24.5 194.0,21.6 198.0,24.6 202.0,24.8 206.0,22.1 210.0,18.6 214.0,19.8 218.0,20.0 222.0,31.4 226.0,30.9 230.0,31.8 234.0,37.4 238.0,42.0 238.0,42" fill="#b3382f" fill-opacity="0.07"/><polyline points="2.0,29.4 6.0,28.2 10.0,18.8 14.0,25.8 18.0,23.0 22.0,10.0 26.0,11.8 30.0,9.5 34.0,11.9 38.0,2.4 42.0,3.5 46.0,3.3 50.0,2.0 54.0,5.2 58.0,4.6 62.0,7.6 66.0,11.0 70.0,9.4 74.0,6.2 78.0,12.2 82.0,10.0 86.0,10.3 90.0,10.5 94.0,11.7 98.0,5.1 102.0,4.4 106.0,5.2 110.0,4.8 114.0,7.2 118.0,9.2 122.0,10.3 126.0,16.8 130.0,15.0 134.0,17.5 138.0,19.2 142.0,19.3 146.0,19.7 150.0,15.5 154.0,16.3 158.0,16.0 162.0,17.8 166.0,15.4 170.0,15.2 174.0,15.0 178.0,18.0 182.0,15.7 186.0,15.7 190.0,24.5 194.0,21.6 198.0,24.6 202.0,24.8 206.0,22.1 210.0,18.6 214.0,19.8 218.0,20.0 222.0,31.4 226.0,30.9 230.0,31.8 234.0,37.4 238.0,42.0" fill="none" stroke="#b3382f" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="238.0" cy="42.0" r="2.6" fill="#b3382f"/></svg></div>
+
+      <div class="metrics">
+        <div><span class="m-l">Położenie</span><span class="m-v">2·percentyl</span></div>
+        <div><span class="m-l">Tendencja ↘</span><span class="m-v">spada</span></div>
+        <div><span class="m-l">RSI</span><span class="m-v">25 · wyprzedanie</span></div>
+        <div><span class="m-l">Zmienność</span><span class="m-v">normalna</span></div>
+      </div>
+
+      <div class="reco">
+        <div class="reco-a">Niekorzystnie i pogarsza się</div>
+        <p class="reco-w">Kurs jest słaby i nadal idzie przeciw Tobie. Jeśli nie musisz - wstrzymaj się; jeśli musisz - podziel na mniejsze transze.</p>
+        
+      </div>
+    </article>
+    </div>
+
+  <h2 class="ctx-h">Kontekst dodatkowy</h2><div class="grid grid-ctx">
+    <article class="card card-context" style="--accent:#1f7a5c">
+      <header class="card-h">
+        <div>
+          <div class="dir">USD → PLN / PLN → USD</div>
+          <div class="dir-sub">Kontekst kursu USD/PLN</div>
+        </div>
+        <div class="rate">
+          <div class="rate-v">3.7811</div>
+          <div class="rate-l">kurs (USDPLN)</div>
+        </div>
+      </header>
+
+      <div class="verdict" style="color:#1f7a5c;background:#e7f3ed">
+        <span class="verdict-l">Korzystny</span>
+        <span class="verdict-c">pewność: Wysoka</span>
+      </div>
+
+      <div class="score-row">
+        <span class="score-end neg">niekorzystnie</span>
+        <div class="sbar" role="img" aria-label="ocena 92 na 100"><div class="sbar-fill" style="left:50.00%;width:46.15%;background:#1f7a5c"></div><div class="sbar-zero"></div></div>
+        <span class="score-end pos">korzystnie</span>
+      </div>
+
+      <div class="rb-wrap"><div class="rb-track" style="background:linear-gradient(90deg, rgba(179,56,47,0.10), rgba(31,122,92,0.16))"><div class="rb-mean" style="left:32.06%" title="średnia"></div><div class="rb-now" style="left:100.00%"><span>dziś</span></div></div><div class="rb-ends"><span>3.5880</span><span class="rb-mid">średnia 3.6499</span><span>3.7811</span></div></div>
+
+      <div class="spark-wrap"><svg class="spark" viewBox="0 0 240 44" preserveAspectRatio="none" role="img" aria-label="wykres ostatnich kursów"><polygon points="2,42 2.0,11.7 6.0,12.5 10.0,21.4 14.0,15.0 18.0,18.9 22.0,32.5 26.0,30.8 30.0,34.6 34.0,31.0 38.0,40.0 42.0,39.4 46.0,39.4 50.0,42.0 54.0,39.5 58.0,40.7 62.0,35.5 66.0,33.7 70.0,35.3 74.0,36.9 78.0,31.9 82.0,32.9 86.0,31.1 90.0,31.6 94.0,31.1 98.0,39.8 102.0,41.3 106.0,39.9 110.0,38.7 114.0,35.6 118.0,33.5 122.0,35.1 126.0,28.8 130.0,30.4 134.0,28.8 138.0,25.4 142.0,26.5 146.0,27.4 150.0,31.9 154.0,31.8 158.0,31.1 162.0,30.4 166.0,33.2 170.0,32.3 174.0,32.3 178.0,29.3 182.0,31.3 186.0,31.8 190.0,23.7 194.0,26.8 198.0,22.5 202.0,21.8 206.0,24.5 210.0,27.5 214.0,27.2 218.0,27.3 222.0,15.7 226.0,15.4 230.0,13.5 234.0,6.5 238.0,2.0 238.0,42" fill="#1f7a5c" fill-opacity="0.07"/><polyline points="2.0,11.7 6.0,12.5 10.0,21.4 14.0,15.0 18.0,18.9 22.0,32.5 26.0,30.8 30.0,34.6 34.0,31.0 38.0,40.0 42.0,39.4 46.0,39.4 50.0,42.0 54.0,39.5 58.0,40.7 62.0,35.5 66.0,33.7 70.0,35.3 74.0,36.9 78.0,31.9 82.0,32.9 86.0,31.1 90.0,31.6 94.0,31.1 98.0,39.8 102.0,41.3 106.0,39.9 110.0,38.7 114.0,35.6 118.0,33.5 122.0,35.1 126.0,28.8 130.0,30.4 134.0,28.8 138.0,25.4 142.0,26.5 146.0,27.4 150.0,31.9 154.0,31.8 158.0,31.1 162.0,30.4 166.0,33.2 170.0,32.3 174.0,32.3 178.0,29.3 182.0,31.3 186.0,31.8 190.0,23.7 194.0,26.8 198.0,22.5 202.0,21.8 206.0,24.5 210.0,27.5 214.0,27.2 218.0,27.3 222.0,15.7 226.0,15.4 230.0,13.5 234.0,6.5 238.0,2.0" fill="none" stroke="#1f7a5c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="238.0" cy="2.0" r="2.6" fill="#1f7a5c"/></svg></div>
+
+      <div class="metrics">
+        <div><span class="m-l">Położenie</span><span class="m-v">100·percentyl</span></div>
+        <div><span class="m-l">Tendencja ↗</span><span class="m-v">rośnie</span></div>
+        <div><span class="m-l">RSI</span><span class="m-v">76 · wykupienie</span></div>
+        <div><span class="m-l">Zmienność</span><span class="m-v">normalna</span></div>
+      </div>
+
+      <div class="reco">
+        <div class="reco-a">Korzystnie - możesz rozłożyć w czasie</div>
+        <p class="reco-w">Poziom jest dobry i nadal poprawia się na Twoją korzyść. Możesz wymienić część teraz, a resztę obserwować.</p>
+        <ul class="notes"><li>W oknie wypada Decyzja RPP ws. stóp (z projekcją) (NBP, za 13 dni) - może gwałtownie ruszyć kursem; rozważ wymianę przed posiedzeniem lub podział.</li></ul>
+      </div>
+    </article>
+    </div>
+
+  <section class="events"><h2>Wydarzenia w oknie (14 dni)</h2><p class="events-note">Decyzje w tym okresie mogą gwałtownie ruszyć kursem. Przy wymianie w tych dniach rozważ podział lub wymianę przed posiedzeniem.</p><table class="ev-table"><tbody><tr><td class="ev-d">2026-07-08<span>za 13 dni</span></td><td><span class="ev-bank ev-PLN">NBP</span></td><td>Decyzja RPP ws. stóp (z projekcją)</td><td class="ev-ccy">PLN</td></tr></tbody></table></section>
+
+  <footer>
+    <p><b>Metodologia.</b> Położenie (waga 70%) = percentyl bieżącego kursu w oknie
+    60 sesji. Tendencja (waga 30%) = znormalizowany ruch z 10 sesji.
+    RSI, wstęga Bollingera i zmienność służą jako potwierdzenie i modyfikator pewności.
+    EUR/PLN i EUR/USD to kursy referencyjne EBC (źródło: Frankfurter API); USD/PLN wyliczany
+    krzyżowo. EUR→PLN i PLN→EUR opisują ten sam kurs z dwóch stron, więc ich oceny są
+    zwykle przeciwne - to poprawne zachowanie, nie sprzeczność.</p>
+    <p><b>Zastrzeżenie.</b> Kurs w horyzoncie 2 tygodni jest w dużej mierze nieprzewidywalny.
+    Decyzję podejmujesz samodzielnie. Nie jestem doradcą finansowym.</p>
+  </footer>
+
+</div>
+</body>
+</html>
