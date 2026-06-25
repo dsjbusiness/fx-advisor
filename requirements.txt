@@ -1,0 +1,6 @@
+# FX Advisor nie wymaga \u017cadnych zewn\u0119trznych bibliotek -
+# dzia\u0142a na samej bibliotece standardowej Pythona (3.9+).
+#
+# Plik zostawiony celowo (prawie) pusty, by workflow i Twoje przyzwyczajenia
+# z innych repo dzia\u0142a\u0142y bez zmian. Je\u015bli kiedy\u015b dodasz np. zapis do Google
+# Sheets, doinstalujesz tu: gspread i google-auth.
