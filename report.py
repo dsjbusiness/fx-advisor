@@ -109,6 +109,18 @@ def _card(res, primary=True):
 
     spark = _sparkline(a["spark"], stroke=bar)
 
+    # Karta dwukierunkowa (kontekst USD/PLN) ma w etykiecie oba kierunki:
+    # "USD -> PLN / PLN -> USD". Samo "Korzystny" jest wtedy mylace, bo werdykt
+    # liczony jest dla kierunku high_good = pierwszego na liscie. Dopisz wiec do
+    # werdyktu kierunek, ktorego dotyczy, zeby bylo jasne, w ktora strone jest
+    # korzystnie (przy favorability < 0 korzystny jest kierunek przeciwny).
+    verdict_text = res["label"]
+    if " / " in d["label"] and res["label_cls"] != "neutral":
+        parts = [p.strip() for p in d["label"].split(" / ")]
+        if len(parts) == 2:
+            scored_dir = parts[0]          # werdykt opisuje kierunek high_good
+            verdict_text = "{}: {}".format(res["label"], scored_dir)
+
     return """
     <article class="card {cardcls}" style="--accent:{bar}">
       <header class="card-h">
@@ -154,7 +166,7 @@ def _card(res, primary=True):
         cardcls="card-primary" if primary else "card-context",
         bar=bar, label=html.escape(d["label"]), desc=html.escape(d["desc"]),
         rate=_fmt(a["current"]), pair=d["pair"],
-        verdict=html.escape(res["label"]), conf=html.escape(res["confidence_bucket"]),
+        verdict=html.escape(verdict_text), conf=html.escape(res["confidence_bucket"]),
         tcol=tcol, bg=bg,
         scorebar=_score_bar(res["favorability"]),
         rangebar=_range_bar(a, d["high_good"]),
