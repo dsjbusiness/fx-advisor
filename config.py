@@ -147,9 +147,11 @@ EMAIL_ENABLED = False          # albo ustaw env FX_EMAIL_ENABLED=1
 EMAIL_FROM = "fx@supercoinsy.pl"
 EMAIL_TO = "marketing@supercoinsy.pl"
 EMAIL_SUBJECT = "FX Advisor - przegl\u0105d wymiany walut"
-# Wysy\u0142ka tylko gdy ocena któregokolwiek kierunku przekracza ten próg (|score|),
-# albo gdy wydarzenie wpada w okno. Dzi\u0119ki temu nie dostajesz maila codziennie
-# bez powodu. Ustaw 0, by dostawa\u0107 zawsze.
+# Wysyłka maila TYLKO gdy któryś główny kierunek jest KORZYSTNY, tzn. ma
+# favorability DODATNIĄ i >= tego progu. Mocny minus ("Niekorzystny") nie wysyła.
+# Same wydarzenia banków centralnych też nie wysyłają (są tylko kontekstem w treści).
+# 35 = etykieta "Korzystny"; obniż do 15, by łapać też "Lekko korzystny";
+# 0 = praktycznie zawsze (gdy którykolwiek kierunek jest nieujemny).
 EMAIL_ALERT_MIN_SCORE = 35
 
 # Zapis historii do pliku JSON (stan, do wykres\u00f3w/audytu).

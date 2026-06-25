@@ -51,16 +51,19 @@ def text_summary(analysis):
 
 
 def _email_on(analysis):
-    """Czy wys\u0142a\u0107 maila? Tylko gdy mocny sygna\u0142 lub wydarzenie w oknie."""
+    """Czy wys\u0142a\u0107 maila?
+
+    Wysy\u0142amy TYLKO gdy kt\u00f3ra\u015b z g\u0142\u00f3wnych par jest teraz w KORZYSTNYM momencie
+    na wymian\u0119: favorability dodatnia i >= progu (etykieta "Korzystny").
+    "Niekorzystny" (mocny minus) maila NIE wysy\u0142a - to nie jest dobry moment.
+    Wydarzenia bank\u00f3w centralnych same z siebie te\u017c NIE wyzwalaj\u0105 maila; trafiaj\u0105
+    jedynie do tre\u015bci jako kontekst, gdy mail i tak wychodzi z powodu korzystnej pary.
+    """
     enabled = os.environ.get("FX_EMAIL_ENABLED", "1" if config.EMAIL_ENABLED else "0") == "1"
     if not enabled:
         return False
-    if config.EMAIL_ALERT_MIN_SCORE <= 0:
-        return True
-    if analysis["events"]:
-        return True
     for r in analysis["results"]:
-        if r["direction"]["primary"] and abs(r["favorability"]) >= config.EMAIL_ALERT_MIN_SCORE:
+        if r["direction"]["primary"] and r["favorability"] >= config.EMAIL_ALERT_MIN_SCORE:
             return True
     return False
 
