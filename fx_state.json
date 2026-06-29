@@ -43,5 +43,20 @@
       "EURUSD": 1.1401,
       "USDPLN": 3.76
     }
+  },
+  {
+    "ts": "2026-06-29 17:16",
+    "data_date": "2026-06-29",
+    "scores": {
+      "eur_pln": 86.4,
+      "pln_eur": -86.4,
+      "eur_usd": -80.0,
+      "usd_pln": 83.2
+    },
+    "rates": {
+      "EURPLN": 4.2873,
+      "EURUSD": 1.1406,
+      "USDPLN": 3.7588
+    }
   }
 ]
