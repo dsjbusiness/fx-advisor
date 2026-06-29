@@ -5,7 +5,9 @@ on:
   schedule:
     # Dni robocze, ok. 16:30 czasu PL. Fixing EBC publikowany jest po po\u0142udniu,
     # wi\u0119c po 16:00 masz \u015bwie\u017cy kurs. (cron jest w UTC; 14:30 UTC \u2248 16:30 CEST)
-    - cron: "30 14 * * 1-5"
+    # Dwa biegi dziennie obejmujace moment publikacji fixingu EBC (~16:00 CET):
+    - cron: "30 6 * * 1-5"    # ~08:30 PL - poranny przeglad (ostatni dostepny fixing)
+    - cron: "30 14 * * 1-5"   # ~16:30 PL - po publikacji fixingu EBC (swieze dane dnia)
   workflow_dispatch: {}   # mo\u017cliwo\u015b\u0107 r\u0119cznego uruchomienia z zak\u0142adki Actions
 
 permissions:
