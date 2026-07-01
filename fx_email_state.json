@@ -1,8 +1,18 @@
 {
   "last_sent_date": "2026-07-01",
-  "prev_favorable": {
-    "eur_pln": true,
-    "pln_eur": false,
-    "eur_usd": false
+  "last_signature": "EUR/PLN: kurs 4.2958 wszedl w gorny decyl 250 sesji (korzystnie dla EUR→PLN)|EUR/USD: kurs 1.1383 wszedl w dolny decyl 250 sesji (korzystnie dla USD→EUR)|USD/PLN: kurs 3.7739 wszedl w gorny decyl 250 sesji (korzystnie dla USD→PLN)|jutro NFP - zatrudnienie w USA (czerwiec; czwartek przed 4 lipca) (BLS) - wykonaj zaplanowane transze USD→PLN PRZED publikacja",
+  "prev": {
+    "EURPLN": {
+      "score": 80.3,
+      "decile": "top"
+    },
+    "USDPLN": {
+      "score": 71.3,
+      "decile": "top"
+    },
+    "EURUSD": {
+      "score": -66.6,
+      "decile": "bottom"
+    }
   }
 }
