@@ -1,17 +1,14 @@
 name: FX Advisor
 
-# Kiedy ma sie uruchamiac:
 on:
   schedule:
-    # Dni robocze, ok. 16:30 czasu PL. Fixing EBC publikowany jest po po\u0142udniu,
-    # wi\u0119c po 16:00 masz \u015bwie\u017cy kurs. (cron jest w UTC; 14:30 UTC \u2248 16:30 CEST)
-    # Dwa biegi dziennie obejmujace moment publikacji fixingu EBC (~16:00 CET):
-    - cron: "30 6 * * 1-5"    # ~08:30 PL - poranny przeglad (ostatni dostepny fixing)
-    - cron: "30 14 * * 1-5"   # ~16:30 PL - po publikacji fixingu EBC (swieze dane dnia)
-  workflow_dispatch: {}   # mo\u017cliwo\u015b\u0107 r\u0119cznego uruchomienia z zak\u0142adki Actions
+    # Dni robocze (cron w UTC). Fixing EBC publikowany ~16:00 CET:
+    - cron: "30 6 * * 1-5"    # ~08:30 PL - poranny przeglad (ostatni fixing)
+    - cron: "30 14 * * 1-5"   # ~16:30 PL - po publikacji fixingu EBC
+  workflow_dispatch: {}       # reczne uruchomienie z zakladki Actions
 
 permissions:
-  contents: write          # potrzebne, by zapisa\u0107 raport/historie z powrotem do repo
+  contents: write             # zapis raportu, historii i backtestu do repo
 
 jobs:
   run:
@@ -25,11 +22,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      # Brak zewn\u0119trznych bibliotek - sama biblioteka standardowa.
+      # Testy jednostkowe (matematyka wskaznikow + logika deadline) - szybkie.
+      - name: Run unit tests
+        run: python -m unittest discover -s tests
+
+      # Backtest: cache w data/backtest.json - pelny przelicz najwyzej raz
+      # na tydzien (albo przy zmianie wersji silnika / duzej paczce nowych
+      # sesji), wiec dzienny bieg pozostaje szybki.
       - name: Run FX Advisor
         env:
-          # E-mail (opcjonalnie). Dodaj te sekrety w Settings -> Secrets -> Actions,
-          # albo usu\u0144 ten blok, je\u015bli nie chcesz maili.
           FX_EMAIL_ENABLED: "1"
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           FX_EMAIL_FROM: ${{ secrets.FX_EMAIL_FROM }}
@@ -37,15 +38,14 @@ jobs:
         run: |
           python main.py --out docs/index.html
 
-      # Zapis raportu i historii z powrotem do repo (raport laduje w /docs,
-      # wi\u0119c mo\u017cesz w\u0142\u0105czy\u0107 GitHub Pages i mie\u0107 zawsze aktualny panel pod URL).
-      - name: Commit report + history
+      - name: Commit report + data
         run: |
           git config user.name "fx-advisor-bot"
           git config user.email "bot@users.noreply.github.com"
-          # fx_state.json jest w .gitignore (blokuje lokalne commity), wiec tu
-          # wymuszamy dodanie -f: to jedyne miejsce, ktore ma go utrwalac w repo.
-          git add -f docs/index.html fx_state.json
+          # pliki stanu sa w .gitignore (blokuje przypadkowe lokalne commity);
+          # workflow jest jedynym miejscem, ktore ma je utrwalac -> -f
+          git add docs/index.html data/history.json data/backtest.json
+          git add -f fx_state.json
           [ -f fx_email_state.json ] && git add -f fx_email_state.json || true
           git commit -m "FX report $(date -u +%Y-%m-%d)" || echo "brak zmian"
-          git push || echo "nie uda\u0142o si\u0119 push (sprawd\u017a permissions: contents: write)"
+          git push || echo "push nieudany (sprawdz permissions: contents: write)"

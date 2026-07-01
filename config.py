@@ -1,162 +1,107 @@
 # -*- coding: utf-8 -*-
 """
-Konfiguracja doradcy walutowego (FX Advisor).
-Wszystkie pokrętła są tutaj. Logika liczbowa siedzi w engine.py.
+Konfiguracja FX Advisor. Wszystkie pokretla sa tutaj, logika w pozostalych
+modulach:
+  data_layer.py  - pobieranie i cache historii, kalendarz wydarzen (YAML)
+  indicators.py  - czysta matematyka wskaznikow
+  signals.py     - silnik sygnalow (raz na PARE, nie na kierunek)
+  planner.py     - warstwa decyzyjna: konkretne plany transz + symulator
+  backtest.py    - walk-forward backtest z cache
+  report.py      - generator HTML
+  notify.py      - alerty e-mail (Resend) + zapis stanu
 """
 
 # ---------------------------------------------------------------------------
 # OKNO DECYZYJNE
 # ---------------------------------------------------------------------------
-# Twój horyzont wymiany. Wszystkie wymiany robisz w oknie 2-tygodniowym,
-# więc 14 dni. Wydarzenia (decyzje banków centralnych) wpadające w to okno
-# obniżają pewność rekomendacji i są pokazywane jako ostrzeżenie.
-WINDOW_DAYS = 14
+WINDOW_DAYS = 14          # kroczace okno decyzyjne (dni kalendarzowe)
+WINDOW_SESSIONS = 10      # ~10 dni roboczych w oknie 14-dniowym
 
 # ---------------------------------------------------------------------------
-# OKNA ANALIZY (w dniach roboczych, bo dane to fixing ECB w dni robocze)
+# HISTORIA DANYCH
 # ---------------------------------------------------------------------------
-LEVEL_WINDOW = 60     # baza "pozycjonowania": gdzie jest kurs na tle ~3 miesięcy
-TREND_WINDOW = 10     # krótka tendencja: ruch z ostatnich ~2 tygodni
-VOL_SHORT = 20        # krótka zmienność
-VOL_LONG = 90         # długa zmienność (baza odniesienia)
+TARGET_SESSIONS = 420     # ile sesji chcemy miec w cache
+MAX_SESSIONS = 520        # twardy limit rozmiaru cache
+MIN_HISTORY = 250         # minimum sesji potrzebne do policzenia sygnalu
+
+DATA_DIR = "data"
+HISTORY_FILE = "data/history.json"
+BACKTEST_FILE = "data/backtest.json"
+EVENTS_GLOB = "data/events_*.yaml"   # events_2026.yaml, events_2027.yaml, ...
+
+# ---------------------------------------------------------------------------
+# SILNIK SYGNALOW
+# ---------------------------------------------------------------------------
+# Percentyle poziomu: 0.2*p30 + 0.3*p90 + 0.5*p250
+LEVEL_WINDOWS = (30, 90, 250)
+LEVEL_WEIGHTS = (0.20, 0.30, 0.50)
+
+TREND_RET_SESSIONS = 10   # zwrot z 10 sesji...
+TREND_VOL_SESSIONS = 20   # ...normalizowany zmiennoscia z 20 sesji
+TREND_TANH_SCALE = 2.0    # trend = 100*tanh(t/SCALE)
+
 RSI_PERIOD = 14
-SPARK_POINTS = 60     # ile punktów na wykresie sparkline w raporcie
+BOLL_N = 20
+BOLL_K = 2.0
 
-# Ile dni kalendarzowych pobierać wstecz, by mieć zapas dni roboczych.
-HISTORY_DAYS = 210
+VOL_SESSIONS = 20         # zmiennosc zrealizowana (20 sesji)
+VOL_REGIME_LOOKBACK = 250 # rozklad wlasnej zmiennosci z ~1 roku
+VOL_LOW_PCT = 25.0        # ponizej -> rezim "niska"
+VOL_HIGH_PCT = 75.0       # powyzej -> rezim "wysoka"
+
+RANGE_Z = 1.28            # 80% przedzial: kurs +/- 1.28*sigma*sqrt(10)
+
+# Wagi score zlozonego S (perspektywa SPRZEDAZY waluty bazowej)
+W_LEVEL = 0.55
+W_TREND = 0.25
+W_MR = 0.20
+
+# Progi decyzyjne na S (-100..+100)
+S_STRONG = 60
+S_MILD = 20
 
 # ---------------------------------------------------------------------------
-# PARY I KIERUNKI
+# PARY (score liczony raz na pare; kierunek kupna = -S)
 # ---------------------------------------------------------------------------
-# Dane bazowe pobieramy z ECB (baza EUR): EUR/PLN i EUR/USD.
-# USD/PLN wyliczamy jako EUR/PLN / EUR/USD.
-#
-# "high_good": czy WYSOKI kurs danej pary jest korzystny dla tego kierunku.
-#   EUR -> PLN  : sprzedajesz EUR za PLN. Wysoki EUR/PLN = więcej PLN. high_good = True
-#   PLN -> EUR  : kupujesz EUR za PLN. Niski EUR/PLN = taniej EUR.   high_good = False
-#   EUR -> USD  : sprzedajesz EUR za USD. Wysoki EUR/USD = więcej USD. high_good = True
-DIRECTIONS = [
+# base/quote: sprzedaz bazy = korzystny WYSOKI kurs pary.
+PAIRS = [
     {
-        "id": "eur_pln",
-        "label": "EUR \u2192 PLN",
-        "desc": "Sprzeda\u017c EUR, zakup PLN",
-        "pair": "EURPLN",
-        "high_good": True,
+        "pair": "EURPLN", "base": "EUR", "quote": "PLN",
+        "label": "EUR/PLN",
         "affected_by": ["EUR", "PLN"],
-        "primary": True,
+        "unit_amount": 10000,   # "na kazde 10 000 EUR"
     },
     {
-        "id": "pln_eur",
-        "label": "PLN \u2192 EUR",
-        "desc": "Sprzeda\u017c PLN, zakup EUR",
-        "pair": "EURPLN",
-        "high_good": False,
-        "affected_by": ["EUR", "PLN"],
-        "primary": True,
-    },
-    {
-        "id": "eur_usd",
-        "label": "EUR \u2192 USD",
-        "desc": "Sprzeda\u017c EUR, zakup USD",
-        "pair": "EURUSD",
-        "high_good": True,
-        "affected_by": ["EUR", "USD"],
-        "primary": True,
-    },
-    # Karta kontekstowa (zasilanie konta USD pod akcje). Nie była w pytaniu,
-    # ale wynika z EUR/PLN i EUR/USD za darmo. Ustaw "primary": True jeśli
-    # chcesz traktować ją na równi z trzema głównymi.
-    {
-        "id": "usd_pln",
-        "label": "USD \u2192 PLN / PLN \u2192 USD",
-        "desc": "Kontekst kursu USD/PLN",
-        "pair": "USDPLN",
-        "high_good": True,   # liczone informacyjnie; karta pokazuje samo położenie
+        "pair": "USDPLN", "base": "USD", "quote": "PLN",
+        "label": "USD/PLN",
         "affected_by": ["USD", "PLN"],
-        "primary": False,
+        "unit_amount": 10000,
+    },
+    {
+        "pair": "EURUSD", "base": "EUR", "quote": "USD",
+        "label": "EUR/USD",
+        "affected_by": ["EUR", "USD"],
+        "unit_amount": 10000,
     },
 ]
 
 # ---------------------------------------------------------------------------
-# PROGI OCENY (favorability w skali -100..+100, w kierunku Twojej wymiany)
+# BACKTEST
 # ---------------------------------------------------------------------------
-THRESHOLDS = {
-    "strong_pos": 35,   # Korzystny
-    "mild_pos": 15,     # Lekko korzystny
-    "mild_neg": -15,    # Lekko niekorzystny
-    "strong_neg": -35,  # Niekorzystny
-}
-# Waga składników oceny.
-W_LEVEL = 0.70
-W_TREND = 0.30
-# Próg uznania zmienności za podwyższoną (krótka / długa).
-VOL_ELEVATED_RATIO = 1.25
+ENGINE_VERSION = "2.1"        # zmiana wersji wymusza pelny przelicz backtestu
+BACKTEST_MAX_AGE_DAYS = 7     # pelny przelicz co najwyzej raz na tydzien
+BACKTEST_MIN_NEW_SESSIONS = 10  # ...albo gdy przybylo tyle nowych sesji
 
 # ---------------------------------------------------------------------------
-# KALENDARZ WYDARZE\u0143 (decyzje banków centralnych, 2026)
+# POWIADOMIENIA (Resend) - czytane ze zmiennych srodowiskowych
 # ---------------------------------------------------------------------------
-# To są dni OG\u0141OSZENIA decyzji (drugi dzień posiedzenia). Wydarzenie wpadające
-# w Twoje okno 2-tygodniowe podnosi ryzyko gwa\u0142townego ruchu i obniża pewność.
-#
-# \u017aród\u0142a dat (zweryfikowane przy budowie, czerwiec 2026):
-#   ECB:  ecb.europa.eu  (decyzje w czwartki, og\u0142oszenie ~14:15 CET)
-#   Fed:  federalreserve.gov  (og\u0142oszenie ~20:00 CET, drugi dzie\u0144)
-#   NBP:  nbp.pl  (RPP, og\u0142oszenie ~15:00-16:00, drugi dzie\u0144)
-#
-# UWAGA: daty RPP na II po\u0142owe 2026 (wrzesie\u0144-grudzie\u0144) NIE są tu wpisane,
-# bo \u017aród\u0142a r\u00f3\u017cni\u0142y sie co do dok\u0142adnych dni. Wejd\u017a na
-# https://nbp.pl  ->  Polityka pieni\u0119\u017cna -> Kalendarz posiedze\u0144 RPP
-# i dopisz brakuj\u0105ce daty (po jednej linii). Pewna data: 8 lipca 2026.
-#
-# Format: ("YYYY-MM-DD", "Bank", "WALUTA", "opis", impact)  impact: "high"/"medium"
-EVENTS = [
-    # --- ECB (EUR) ---
-    ("2026-03-19", "ECB", "EUR", "Decyzja EBC ws. st\u00f3p", "high"),
-    ("2026-04-30", "ECB", "EUR", "Decyzja EBC ws. st\u00f3p", "high"),
-    ("2026-06-11", "ECB", "EUR", "Decyzja EBC ws. st\u00f3p", "high"),
-    ("2026-07-23", "ECB", "EUR", "Decyzja EBC ws. st\u00f3p", "high"),
-    ("2026-09-10", "ECB", "EUR", "Decyzja EBC ws. st\u00f3p", "high"),
-    ("2026-10-29", "ECB", "EUR", "Decyzja EBC ws. st\u00f3p", "high"),
-    ("2026-12-17", "ECB", "EUR", "Decyzja EBC ws. st\u00f3p", "high"),
-    # --- Fed (USD) ---
-    ("2026-01-28", "Fed", "USD", "Decyzja FOMC ws. st\u00f3p", "high"),
-    ("2026-03-18", "Fed", "USD", "Decyzja FOMC ws. st\u00f3p", "high"),
-    ("2026-04-29", "Fed", "USD", "Decyzja FOMC ws. st\u00f3p", "high"),
-    ("2026-06-17", "Fed", "USD", "Decyzja FOMC ws. st\u00f3p", "high"),
-    ("2026-07-29", "Fed", "USD", "Decyzja FOMC ws. st\u00f3p", "high"),
-    ("2026-09-16", "Fed", "USD", "Decyzja FOMC ws. st\u00f3p", "high"),
-    ("2026-10-28", "Fed", "USD", "Decyzja FOMC ws. st\u00f3p", "high"),
-    ("2026-12-09", "Fed", "USD", "Decyzja FOMC ws. st\u00f3p", "high"),
-    # --- NBP / RPP (PLN) --- (II po\u0142owa roku: uzupe\u0142nij z nbp.pl)
-    ("2026-01-14", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p", "high"),
-    ("2026-02-04", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p", "high"),
-    ("2026-03-04", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p", "high"),
-    ("2026-06-02", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p", "high"),
-    ("2026-07-08", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p (z projekcj\u0105)", "high"),
-    # ("2026-09-??", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p", "high"),
-    # ("2026-10-??", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p", "high"),
-    # ("2026-11-??", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p (z projekcj\u0105)", "high"),
-    # ("2026-12-??", "NBP", "PLN", "Decyzja RPP ws. st\u00f3p", "high"),
-]
-
-# ---------------------------------------------------------------------------
-# POWIADOMIENIA (opcjonalne) - czytane ze zmiennych \u015brodowiskowych
-# ---------------------------------------------------------------------------
-# E-mail przez Resend (jak w Twoich innych projektach). Ustaw w sekretach.
-EMAIL_ENABLED = False          # albo ustaw env FX_EMAIL_ENABLED=1
+EMAIL_ENABLED = False              # albo env FX_EMAIL_ENABLED=1
 EMAIL_FROM = "fx@supercoinsy.pl"
 EMAIL_TO = "marketing@supercoinsy.pl"
-EMAIL_SUBJECT = "FX Advisor - przegl\u0105d wymiany walut"
-# Wysyłka maila TYLKO gdy któryś główny kierunek jest KORZYSTNY, tzn. ma
-# favorability DODATNIĄ i >= tego progu. Mocny minus ("Niekorzystny") nie wysyła.
-# Same wydarzenia banków centralnych też nie wysyłają (są tylko kontekstem w treści).
-# 35 = etykieta "Korzystny"; obniż do 15, by łapać też "Lekko korzystny";
-# 0 = praktycznie zawsze (gdy którykolwiek kierunek jest nieujemny).
-EMAIL_ALERT_MIN_SCORE = 35
+EMAIL_SUBJECT_PREFIX = "FX Advisor"
 
-# Zapis historii do pliku JSON (stan, do wykres\u00f3w/audytu).
+ALERT_SCORE_CROSS = 60     # alert gdy S ktoregos kierunku przekroczy +/-60
+ALERT_DECILE = 10.0        # alert gdy kurs wejdzie w skrajny decyl 250 sesji
+
 STATE_FILE = "fx_state.json"
-
-# Stan wysylki maila: data ostatniej wysylki (limit raz/dobe) + zestaw par
-# korzystnych z poprzedniego uruchomienia (wykrycie przeskoku na korzystna).
 EMAIL_STATE_FILE = "fx_email_state.json"

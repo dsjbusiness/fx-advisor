@@ -1,0 +1,417 @@
+# FX Advisor - kalendarz wydarzen makro 2026
+#
+# Format (parsowany przez data_layer.load_events, prosty podzbior YAML):
+#   year: RRRR
+#   events:
+#     - date: RRRR-MM-DD        # dzien OGLOSZENIA (dla posiedzen: drugi dzien)
+#       source: NBP|ECB|Fed|BLS|GUS
+#       name: opis po polsku
+#       currencies: [PLN]       # waluty, na ktore wydarzenie wplywa
+#       impact: high|medium
+#
+# Rok 2027: dodaj plik data/events_2027.yaml w tym samym formacie -
+# narzedzie laduje wszystkie pliki data/events_*.yaml.
+#
+# Zrodla dat:
+#   NBP RPP: nbp.pl -> Polityka pieniezna -> harmonogram posiedzen
+#            (wrzesien-grudzien wg konwencji pierwszy wt-sr miesiaca; ZWERYFIKUJ
+#             na nbp.pl gdy NBP opublikuje/zmieni harmonogram II polrocza)
+#   ECB: ecb.europa.eu (decyzje w czwartki, ogloszenie ~14:15 CET)
+#   Fed/FOMC: federalreserve.gov (ogloszenie ~20:00 czasu PL, drugi dzien)
+#   US CPI: bls.gov schedule (~14:30 czasu PL); daty orientacyjne - zweryfikuj
+#   US NFP: pierwszy piatek miesiaca (styczen i lipiec przesuniete - swieta)
+#   PL CPI: GUS - szybki szacunek ~ostatni dzien roboczy miesiaca,
+#           odczyt finalny ~15. dnia kolejnego miesiaca
+
+year: 2026
+
+events:
+  # --- NBP / RPP (PLN) - decyzje ws. stop procentowych ---
+  - date: 2026-01-14
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high
+  - date: 2026-02-04
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high
+  - date: 2026-03-04
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (projekcja NBP)
+    currencies: [PLN]
+    impact: high
+  - date: 2026-04-08
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high
+  - date: 2026-05-06
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high
+  - date: 2026-06-02
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high
+  - date: 2026-07-08
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (projekcja NBP)
+    currencies: [PLN]
+    impact: high
+  - date: 2026-09-09
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high
+  - date: 2026-10-07
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high
+  - date: 2026-11-04
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (projekcja NBP)
+    currencies: [PLN]
+    impact: high
+  - date: 2026-12-16
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high
+
+  # --- ECB (EUR) - decyzje Rady Prezesow ws. polityki pienieznej ---
+  - date: 2026-02-05
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych
+    currencies: [EUR]
+    impact: high
+  - date: 2026-03-19
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych (projekcje)
+    currencies: [EUR]
+    impact: high
+  - date: 2026-04-30
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych
+    currencies: [EUR]
+    impact: high
+  - date: 2026-06-11
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych (projekcje)
+    currencies: [EUR]
+    impact: high
+  - date: 2026-07-23
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych
+    currencies: [EUR]
+    impact: high
+  - date: 2026-09-10
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych (projekcje)
+    currencies: [EUR]
+    impact: high
+  - date: 2026-10-29
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych
+    currencies: [EUR]
+    impact: high
+  - date: 2026-12-17
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych (projekcje)
+    currencies: [EUR]
+    impact: high
+
+  # --- Fed / FOMC (USD) - decyzje ws. stop procentowych ---
+  - date: 2026-01-28
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych
+    currencies: [USD]
+    impact: high
+  - date: 2026-03-18
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych (projekcje)
+    currencies: [USD]
+    impact: high
+  - date: 2026-04-29
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych
+    currencies: [USD]
+    impact: high
+  - date: 2026-06-17
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych (projekcje)
+    currencies: [USD]
+    impact: high
+  - date: 2026-07-29
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych
+    currencies: [USD]
+    impact: high
+  - date: 2026-09-16
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych (projekcje)
+    currencies: [USD]
+    impact: high
+  - date: 2026-10-28
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych
+    currencies: [USD]
+    impact: high
+  - date: 2026-12-09
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych (projekcje)
+    currencies: [USD]
+    impact: high
+
+  # --- US CPI (USD) - inflacja CPI, publikacja BLS ---
+  - date: 2026-01-13
+    source: BLS
+    name: Inflacja CPI w USA (grudzien 2025)
+    currencies: [USD]
+    impact: high
+  - date: 2026-02-11
+    source: BLS
+    name: Inflacja CPI w USA (styczen)
+    currencies: [USD]
+    impact: high
+  - date: 2026-03-11
+    source: BLS
+    name: Inflacja CPI w USA (luty)
+    currencies: [USD]
+    impact: high
+  - date: 2026-04-10
+    source: BLS
+    name: Inflacja CPI w USA (marzec)
+    currencies: [USD]
+    impact: high
+  - date: 2026-05-12
+    source: BLS
+    name: Inflacja CPI w USA (kwiecien)
+    currencies: [USD]
+    impact: high
+  - date: 2026-06-10
+    source: BLS
+    name: Inflacja CPI w USA (maj)
+    currencies: [USD]
+    impact: high
+  - date: 2026-07-14
+    source: BLS
+    name: Inflacja CPI w USA (czerwiec)
+    currencies: [USD]
+    impact: high
+  - date: 2026-08-12
+    source: BLS
+    name: Inflacja CPI w USA (lipiec)
+    currencies: [USD]
+    impact: high
+  - date: 2026-09-11
+    source: BLS
+    name: Inflacja CPI w USA (sierpien)
+    currencies: [USD]
+    impact: high
+  - date: 2026-10-13
+    source: BLS
+    name: Inflacja CPI w USA (wrzesien)
+    currencies: [USD]
+    impact: high
+  - date: 2026-11-12
+    source: BLS
+    name: Inflacja CPI w USA (pazdziernik)
+    currencies: [USD]
+    impact: high
+  - date: 2026-12-10
+    source: BLS
+    name: Inflacja CPI w USA (listopad)
+    currencies: [USD]
+    impact: high
+
+  # --- US Non-Farm Payrolls (USD) - pierwszy piatek miesiaca ---
+  - date: 2026-01-09
+    source: BLS
+    name: NFP - zatrudnienie w USA (grudzien 2025)
+    currencies: [USD]
+    impact: high
+  - date: 2026-02-06
+    source: BLS
+    name: NFP - zatrudnienie w USA (styczen)
+    currencies: [USD]
+    impact: high
+  - date: 2026-03-06
+    source: BLS
+    name: NFP - zatrudnienie w USA (luty)
+    currencies: [USD]
+    impact: high
+  - date: 2026-04-03
+    source: BLS
+    name: NFP - zatrudnienie w USA (marzec)
+    currencies: [USD]
+    impact: high
+  - date: 2026-05-01
+    source: BLS
+    name: NFP - zatrudnienie w USA (kwiecien)
+    currencies: [USD]
+    impact: high
+  - date: 2026-06-05
+    source: BLS
+    name: NFP - zatrudnienie w USA (maj)
+    currencies: [USD]
+    impact: high
+  - date: 2026-07-02
+    source: BLS
+    name: NFP - zatrudnienie w USA (czerwiec; czwartek przed 4 lipca)
+    currencies: [USD]
+    impact: high
+  - date: 2026-08-07
+    source: BLS
+    name: NFP - zatrudnienie w USA (lipiec)
+    currencies: [USD]
+    impact: high
+  - date: 2026-09-04
+    source: BLS
+    name: NFP - zatrudnienie w USA (sierpien)
+    currencies: [USD]
+    impact: high
+  - date: 2026-10-02
+    source: BLS
+    name: NFP - zatrudnienie w USA (wrzesien)
+    currencies: [USD]
+    impact: high
+  - date: 2026-11-06
+    source: BLS
+    name: NFP - zatrudnienie w USA (pazdziernik)
+    currencies: [USD]
+    impact: high
+  - date: 2026-12-04
+    source: BLS
+    name: NFP - zatrudnienie w USA (listopad)
+    currencies: [USD]
+    impact: high
+
+  # --- Polska inflacja CPI (PLN) - GUS ---
+  # szybki szacunek (flash) ~ostatni dzien roboczy miesiaca odniesienia
+  - date: 2026-01-30
+    source: GUS
+    name: PL CPI - szybki szacunek (styczen)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-02-27
+    source: GUS
+    name: PL CPI - szybki szacunek (luty)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-03-31
+    source: GUS
+    name: PL CPI - szybki szacunek (marzec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-04-30
+    source: GUS
+    name: PL CPI - szybki szacunek (kwiecien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-05-29
+    source: GUS
+    name: PL CPI - szybki szacunek (maj)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-06-30
+    source: GUS
+    name: PL CPI - szybki szacunek (czerwiec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-07-31
+    source: GUS
+    name: PL CPI - szybki szacunek (lipiec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-08-31
+    source: GUS
+    name: PL CPI - szybki szacunek (sierpien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-09-30
+    source: GUS
+    name: PL CPI - szybki szacunek (wrzesien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-10-30
+    source: GUS
+    name: PL CPI - szybki szacunek (pazdziernik)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-11-30
+    source: GUS
+    name: PL CPI - szybki szacunek (listopad)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-12-30
+    source: GUS
+    name: PL CPI - szybki szacunek (grudzien)
+    currencies: [PLN]
+    impact: medium
+
+  # odczyt finalny ~15. dnia kolejnego miesiaca
+  - date: 2026-01-15
+    source: GUS
+    name: PL CPI - odczyt finalny (grudzien 2025)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-02-13
+    source: GUS
+    name: PL CPI - odczyt finalny (styczen)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-03-13
+    source: GUS
+    name: PL CPI - odczyt finalny (luty)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-04-15
+    source: GUS
+    name: PL CPI - odczyt finalny (marzec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-05-15
+    source: GUS
+    name: PL CPI - odczyt finalny (kwiecien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-06-15
+    source: GUS
+    name: PL CPI - odczyt finalny (maj)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-07-15
+    source: GUS
+    name: PL CPI - odczyt finalny (czerwiec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-08-14
+    source: GUS
+    name: PL CPI - odczyt finalny (lipiec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-09-15
+    source: GUS
+    name: PL CPI - odczyt finalny (sierpien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-10-15
+    source: GUS
+    name: PL CPI - odczyt finalny (wrzesien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-11-16
+    source: GUS
+    name: PL CPI - odczyt finalny (pazdziernik)
+    currencies: [PLN]
+    impact: medium
+  - date: 2026-12-15
+    source: GUS
+    name: PL CPI - odczyt finalny (listopad)
+    currencies: [PLN]
+    impact: medium
