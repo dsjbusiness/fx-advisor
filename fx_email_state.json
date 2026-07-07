@@ -3,15 +3,15 @@
   "last_signature": "jutro Decyzja RPP ws. stop procentowych (projekcja NBP) (NBP) - wykonaj zaplanowane transze EUR→PLN PRZED publikacja|jutro Decyzja RPP ws. stop procentowych (projekcja NBP) (NBP) - wykonaj zaplanowane transze USD→PLN PRZED publikacja",
   "prev": {
     "EURPLN": {
-      "score": 62.0,
+      "score": 58.8,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 50.9,
+      "score": 42.2,
       "decile": "top"
     },
     "EURUSD": {
-      "score": -46.7,
+      "score": -37.7,
       "decile": "bottom"
     }
   }
