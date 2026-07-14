@@ -1,17 +1,17 @@
 {
-  "last_sent_date": "2026-07-13",
-  "last_signature": "jutro Inflacja CPI w USA (czerwiec) (BLS) - wykonaj zaplanowane transze USD→PLN PRZED publikacja",
+  "last_sent_date": "2026-07-14",
+  "last_signature": "USD→PLN: score przekroczyl +60 (+62)",
   "prev": {
     "EURPLN": {
-      "score": 65.0,
+      "score": 67.1,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 58.8,
+      "score": 61.5,
       "decile": "top"
     },
     "EURUSD": {
-      "score": -38.5,
+      "score": -41.8,
       "decile": "bottom"
     }
   }
