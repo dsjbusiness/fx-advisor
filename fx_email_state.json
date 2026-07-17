@@ -1,17 +1,17 @@
 {
-  "last_sent_date": "2026-07-14",
-  "last_signature": "USD→PLN: score przekroczyl +60 (+62)",
+  "last_sent_date": "2026-07-17",
+  "last_signature": "USD→PLN: score przekroczyl +60 (+64)",
   "prev": {
     "EURPLN": {
-      "score": 64.0,
+      "score": 70.2,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 48.3,
+      "score": 64.3,
       "decile": "top"
     },
     "EURUSD": {
-      "score": -18.8,
+      "score": -33.9,
       "decile": "bottom"
     }
   }
