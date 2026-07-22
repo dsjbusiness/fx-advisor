@@ -3,15 +3,15 @@
   "last_signature": "jutro Decyzja EBC ws. stop procentowych (ECB) - wykonaj zaplanowane transze EUR→PLN PRZED publikacja",
   "prev": {
     "EURPLN": {
-      "score": 60.5,
+      "score": 54.5,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 59.6,
+      "score": 55.1,
       "decile": "top"
     },
     "EURUSD": {
-      "score": -39.6,
+      "score": -38.4,
       "decile": "bottom"
     }
   }
