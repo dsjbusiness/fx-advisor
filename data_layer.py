@@ -14,9 +14,11 @@ import os
 import glob
 import random
 import ssl
+import sys
+import time
+import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
 from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
 
 import config
 
@@ -25,6 +27,21 @@ FRANKFURTER_HOSTS = [
     "https://api.frankfurter.dev/v1",
     "https://api.frankfurter.app",   # host zapasowy
 ]
+
+# Zrodlo awaryjne: oryginalny feed EBC (te same kursy referencyjne, co
+# Frankfurter, ktory jest tylko nakladka). Plik 90-dniowy wystarcza do
+# aktualizacji przyrostowej; pelna historia (~8 MB) tylko przy zimnym starcie.
+ECB_90D_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml"
+ECB_FULL_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml"
+ECB_90D_SPAN = 85   # ile dni wstecz bezpiecznie pokrywa plik 90-dniowy
+
+
+class FxDataUnavailable(RuntimeError):
+    """Zadne ze zrodel kursow nie odpowiedzialo."""
+
+
+def _log(msg):
+    sys.stderr.write("[data_layer] {}\n".format(msg))
 
 
 def _ssl_context():
@@ -37,32 +54,88 @@ def _ssl_context():
     return ctx
 
 
-def _http_get_json(url, timeout=25):
+def _http_get(url, timeout=None):
+    timeout = timeout or config.HTTP_TIMEOUT
     req = Request(url, headers={"User-Agent": "fx-advisor/2.0"})
     with urlopen(req, timeout=timeout, context=_ssl_context()) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+        return resp.read()
 
 
-def _fetch_range(start, end):
-    """Pobiera z Frankfurter kursy EUR->PLN,USD dla zakresu dat.
-    Zwraca dict {"YYYY-MM-DD": {"PLN": float, "USD": float}}."""
-    path = "/{s}..{e}?base=EUR&symbols=PLN,USD".format(
+def _http_get_json(url, timeout=None):
+    return json.loads(_http_get(url, timeout).decode("utf-8"))
+
+
+def _fetch_frankfurter(host, start, end):
+    """Kursy EUR->PLN,USD z jednego hosta Frankfurter."""
+    url = host + "/{s}..{e}?base=EUR&symbols=PLN,USD".format(
         s=start.isoformat(), e=end.isoformat())
-    last_err = None
-    for host in FRANKFURTER_HOSTS:
-        try:
-            data = _http_get_json(host + path)
-            break
-        except (URLError, HTTPError, ValueError) as e:
-            last_err = e
-            data = None
-    if data is None:
-        raise RuntimeError("Nie udalo sie pobrac danych FX: {}".format(last_err))
+    data = _http_get_json(url)
     out = {}
     for d, row in (data.get("rates") or {}).items():
         if "PLN" in row and "USD" in row and float(row["USD"]) != 0:
             out[d] = {"PLN": float(row["PLN"]), "USD": float(row["USD"])}
     return out
+
+
+def _fetch_ecb(start, end):
+    """Kursy EUR->PLN,USD wprost z feedu XML EBC (zrodlo awaryjne).
+    Struktura: Cube[time] > Cube[currency,rate]."""
+    span_days = (end - start).days
+    url = ECB_90D_URL if span_days <= ECB_90D_SPAN else ECB_FULL_URL
+    root = ET.fromstring(_http_get(url, timeout=config.HTTP_TIMEOUT_ECB))
+    out = {}
+    for day in root.iter():
+        d = day.get("time")
+        if not d:
+            continue
+        if not (start.isoformat() <= d <= end.isoformat()):
+            continue
+        row = {}
+        for cur in day:
+            code, rate = cur.get("currency"), cur.get("rate")
+            if code in ("PLN", "USD") and rate:
+                row[code] = float(rate)
+        if "PLN" in row and "USD" in row and row["USD"] != 0:
+            out[d] = {"PLN": row["PLN"], "USD": row["USD"]}
+    return out
+
+
+def _sources():
+    """Lista (etykieta, funkcja(start, end)) w kolejnosci uzycia."""
+    src = [("frankfurter " + h, (lambda h: lambda s, e: _fetch_frankfurter(h, s, e))(h))
+           for h in FRANKFURTER_HOSTS]
+    src.append(("ecb xml", _fetch_ecb))
+    return src
+
+
+def _fetch_range(start, end):
+    """Pobiera kursy EUR->PLN,USD dla zakresu dat, probujac po kolei kazde
+    zrodlo (z ponowieniami i odczekaniem). Zwraca
+    dict {"YYYY-MM-DD": {"PLN": float, "USD": float}}.
+
+    Wyjatki sieciowe to OSError (URLError, HTTPError i TimeoutError sa jego
+    podklasami) - lapiemy szeroko, zeby timeout jednego hosta nie wywalal
+    calego biegu przed proba nastepnego zrodla."""
+    errors = []
+    for label, fetch in _sources():
+        for attempt in range(1, config.HTTP_RETRIES + 1):
+            try:
+                # Pusta odpowiedz to poprawny wynik: w zakresie nie bylo jeszcze
+                # fixingu (weekend, swieto, poranny bieg przed publikacja EBC).
+                out = fetch(start, end)
+                if errors:
+                    _log("dane pobrane z: {} (po {} nieudanych probach)".format(
+                        label, len(errors)))
+                return out
+            except (OSError, ValueError, ET.ParseError) as e:
+                errors.append("{} (proba {}): {}: {}".format(
+                    label, attempt, type(e).__name__, e))
+            _log("nieudane pobranie -> " + errors[-1])
+            if attempt < config.HTTP_RETRIES:
+                time.sleep(config.HTTP_BACKOFF_S * attempt)
+    raise FxDataUnavailable(
+        "Nie udalo sie pobrac danych FX z zadnego zrodla:\n  " +
+        "\n  ".join(errors))
 
 
 def load_history(path=None):
@@ -91,7 +164,13 @@ def save_history(doc, path=None):
 def update_history(path=None, today=None):
     """Aktualizacja przyrostowa: dociaga tylko daty od ostatniej w cache.
     Przy pustym cache pobiera ~TARGET_SESSIONS sesji jednym zapytaniem.
-    Zwraca doc historii (po zapisie na dysk)."""
+
+    Gdy wszystkie zrodla padna, a cache jest swiezy (do MAX_STALE_DAYS), biegu
+    nie przerywamy - raport powstaje na danych z cache i jest oznaczony jako
+    nieaktualny. Dopiero starszy cache (albo jego brak) konczy sie bledem.
+
+    Zwraca doc historii (po zapisie na dysk); pola "stale"/"stale_days" mowia,
+    czy dane sa z ostatniego udanego pobrania."""
     path = path or config.HISTORY_FILE
     today = today or date.today()
     doc = load_history(path)
@@ -104,9 +183,24 @@ def update_history(path=None, today=None):
         # ~420 sesji to ~590 dni kalendarzowych; bufor na swieta
         start = today - timedelta(days=int(config.TARGET_SESSIONS * 7 / 5) + 60)
 
+    stale_days = 0
     if start <= today:
-        fetched = _fetch_range(start, today)
-        rates.update(fetched)
+        try:
+            rates.update(_fetch_range(start, today))
+            doc["updated"] = today.isoformat()
+        except FxDataUnavailable as e:
+            if not rates:
+                raise
+            last_date = datetime.strptime(max(rates.keys()), "%Y-%m-%d").date()
+            stale_days = (today - last_date).days
+            if stale_days > config.MAX_STALE_DAYS:
+                raise FxDataUnavailable(
+                    "{}\nCache ma juz {} dni (limit {}) - przerywam.".format(
+                        e, stale_days, config.MAX_STALE_DAYS))
+            _log("UWAGA: brak swiezych kursow, jade na cache z {} ({} dni)".format(
+                last_date.isoformat(), stale_days))
+    else:
+        doc["updated"] = today.isoformat()
 
     # przytnij do MAX_SESSIONS najnowszych sesji
     keys = sorted(rates.keys())
@@ -114,7 +208,8 @@ def update_history(path=None, today=None):
         for k in keys[:-config.MAX_SESSIONS]:
             del rates[k]
 
-    doc["updated"] = today.isoformat()
+    doc["stale"] = stale_days > 0
+    doc["stale_days"] = stale_days
     save_history(doc, path)
     return doc
 

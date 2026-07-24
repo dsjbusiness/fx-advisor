@@ -79,6 +79,7 @@ def run_analysis(demo=False, force_backtest=False):
         "today": today.isoformat(),
         "data_date": pair_entries[0]["sig"]["last_date"],
         "demo": demo,
+        "stale_days": int(hist.get("stale_days") or 0),
         "pair_entries": pair_entries,
         "events": win_events,
         "backtest": bt,

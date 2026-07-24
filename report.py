@@ -263,16 +263,23 @@ def _backtest_section(bt):
 
 def build_html(analysis):
     cards = "".join(_pair_card(e) for e in analysis["pair_entries"])
-    demo_banner = ""
+    banners = ""
     if analysis["demo"]:
-        demo_banner = ('<div class="demo-banner">TRYB DEMO - dane syntetyczne. '
-                       'Uruchom bez flagi --demo, by pobrać realne kursy EBC.</div>')
+        banners += ('<div class="demo-banner">TRYB DEMO - dane syntetyczne. '
+                    'Uruchom bez flagi --demo, by pobrać realne kursy EBC.</div>')
+    stale_days = int(analysis.get("stale_days") or 0)
+    if stale_days:
+        banners += ('<div class="demo-banner">UWAGA: źródła kursów były '
+                    'niedostępne — raport policzony na danych z {d} '
+                    '({n} dni wstecz). Plany i poziomy mogą być '
+                    'nieaktualne.</div>').format(
+                        d=_esc(analysis["data_date"]), n=stale_days)
 
     return TEMPLATE.format(
         generated=_esc(analysis["generated_at"]),
         data_date=_esc(analysis["data_date"]),
         window=config.WINDOW_DAYS,
-        demo_banner=demo_banner,
+        demo_banner=banners,
         todo=_todo_box(analysis),
         cards=cards,
         events=_events_section(analysis["events"]),

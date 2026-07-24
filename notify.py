@@ -30,6 +30,9 @@ def text_summary(analysis):
     lines.append("FX ADVISOR  -  {}".format(analysis["generated_at"]))
     lines.append("dane (fixing EBC): {}{}".format(
         analysis["data_date"], "   [DEMO]" if analysis["demo"] else ""))
+    if int(analysis.get("stale_days") or 0):
+        lines.append("UWAGA: zrodla kursow niedostepne - dane starsze o {} dni".format(
+            analysis["stale_days"]))
     lines.append("-" * 64)
     todo = []
     for entry in analysis["pair_entries"]:

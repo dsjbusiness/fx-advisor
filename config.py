@@ -24,6 +24,14 @@ TARGET_SESSIONS = 420     # ile sesji chcemy miec w cache
 MAX_SESSIONS = 520        # twardy limit rozmiaru cache
 MIN_HISTORY = 250         # minimum sesji potrzebne do policzenia sygnalu
 
+# Pobieranie kursow (zrodla: Frankfurter -> feed XML EBC).
+HTTP_TIMEOUT = 20         # s na pojedyncze zapytanie do API kursow
+HTTP_TIMEOUT_ECB = 45     # s - pelna historia EBC to ~8 MB
+HTTP_RETRIES = 2          # prob na kazde zrodlo
+HTTP_BACKOFF_S = 3        # przerwa miedzy probami (rosnie liniowo)
+MAX_STALE_DAYS = 5        # ile dni cache tolerujemy, gdy zrodla nie odpowiadaja
+                          # (5 = piatkowy fixing przezyje dlugi weekend)
+
 DATA_DIR = "data"
 HISTORY_FILE = "data/history.json"
 BACKTEST_FILE = "data/backtest.json"
