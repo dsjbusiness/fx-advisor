@@ -17,6 +17,10 @@ modulach:
 WINDOW_DAYS = 14          # kroczace okno decyzyjne (dni kalendarzowe)
 WINDOW_SESSIONS = 10      # ~10 dni roboczych w oknie 14-dniowym
 
+# Wykres na karcie pary: krotki kontekst + projekcja okna. Dluga historia
+# (250 sesji) pozostaje podstawa OBLICZEN (percentyle), ale nie widoku.
+SPARK_SESSIONS = 40       # ~2 miesiace historii widoczne na wykresie
+
 # ---------------------------------------------------------------------------
 # HISTORIA DANYCH
 # ---------------------------------------------------------------------------

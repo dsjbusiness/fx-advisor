@@ -260,7 +260,19 @@ def build_plan(pair_cfg, sig, win_events, today, sell, backtest_rec=None):
                                                       quote if sell else base)
     current = sig["current"]
     values250 = sig["values250"]
-    levels = plan_levels(values250, sell, current, sig.get("range80_half", 0.0))
+    half = sig.get("range80_half", 0.0)
+    levels = plan_levels(values250, sell, current, half)
+
+    # realnosc poziomu w oknie 14 dni: poziom poza 80% przedzialem ma male
+    # szanse na realizacje - transza i tak domknie sie na deadline
+    hi80 = sig.get("range80_hi", current + half)
+    lo80 = sig.get("range80_lo", current - half)
+
+    def _out_of_window(v):
+        return (v > hi80 + 1e-12) if sell else (v < lo80 - 1e-12)
+
+    def _lvl_note(q):
+        return " - poza 80% przedzialem okna" if _out_of_window(levels[q]) else ""
 
     pair_events = [e for e in win_events
                    if any(c in pair_cfg["affected_by"] for c in e["currencies"])]
@@ -292,15 +304,16 @@ def build_plan(pair_cfg, sig, win_events, today, sell, backtest_rec=None):
     elif bucket == "strong":
         lines.append("Dzis: wymien 70% po kursie rynkowym (~{})".format(_fmt_rate(current)))
         lines.append("25%: zlecenie/alert na {} (cel: 90. percentyl korzystnosci "
-                     "z 250 sesji, zawsze lepiej niz dzis)".format(_fmt_rate(levels[90])))
+                     "z 250 sesji, zawsze lepiej niz dzis){}".format(
+                         _fmt_rate(levels[90]), _lvl_note(90)))
         lines.append("Pozostale 5% - najpozniej {}".format(fmt_date(final_date)))
         today_action = "wymien 70% po ~{}".format(_fmt_rate(current))
     elif bucket == "mild":
         lines.append("Dzis: wymien 45% po kursie rynkowym (~{})".format(_fmt_rate(current)))
-        lines.append("30%: zlecenie/alert na {} (cel: 70. percentyl korzystnosci)".format(
-            _fmt_rate(levels[70])))
-        lines.append("25%: zlecenie/alert na {} (cel: 85. percentyl korzystnosci)".format(
-            _fmt_rate(levels[85])))
+        lines.append("30%: zlecenie/alert na {} (cel: 70. percentyl korzystnosci){}".format(
+            _fmt_rate(levels[70]), _lvl_note(70)))
+        lines.append("25%: zlecenie/alert na {} (cel: 85. percentyl korzystnosci){}".format(
+            _fmt_rate(levels[85]), _lvl_note(85)))
         lines.append("Niezrealizowane transze - najpozniej {}".format(fmt_date(final_date)))
         today_action = "wymien 45% po ~{}".format(_fmt_rate(current))
     elif bucket == "neutral":
@@ -312,20 +325,26 @@ def build_plan(pair_cfg, sig, win_events, today, sell, backtest_rec=None):
                 100 // len(dca_sched), _fmt_rate(current))
     elif bucket == "weak":
         lines.append("Wymien teraz tylko to, co operacyjnie konieczne (ok. 10%).")
-        lines.append("Alert: {} (50. percentyl korzystnosci) - wymien ok. 45%".format(
-            _fmt_rate(levels[50])))
-        lines.append("Alert: {} (70. percentyl korzystnosci) - wymien kolejne 45%".format(
-            _fmt_rate(levels[70])))
+        lines.append("Alert: {} (50. percentyl korzystnosci) - wymien ok. 45%{}".format(
+            _fmt_rate(levels[50]), _lvl_note(50)))
+        lines.append("Alert: {} (70. percentyl korzystnosci) - wymien kolejne 45%{}".format(
+            _fmt_rate(levels[70]), _lvl_note(70)))
         lines.append("Calosc bezwzglednie do {} (twarda zasada okna)".format(
             fmt_date(final_date)))
+        if _out_of_window(levels[50]) and _out_of_window(levels[70]):
+            lines.append("Realnie: oba alerty leza poza 80% przedzialem okna - "
+                         "licz sie z tym, ze wiekszosc domknie sie przy deadline.")
     else:  # wait
         lines.append("Czekaj - kurs w niekorzystnej czesci zakresu.")
-        lines.append("Alert: {} (50. percentyl korzystnosci) - wymien ok. 50%".format(
-            _fmt_rate(levels[50])))
-        lines.append("Alert: {} (70. percentyl korzystnosci) - reszta".format(
-            _fmt_rate(levels[70])))
+        lines.append("Alert: {} (50. percentyl korzystnosci) - wymien ok. 50%{}".format(
+            _fmt_rate(levels[50]), _lvl_note(50)))
+        lines.append("Alert: {} (70. percentyl korzystnosci) - reszta{}".format(
+            _fmt_rate(levels[70]), _lvl_note(70)))
         lines.append("Calosc bezwzglednie do {} (twarda zasada okna)".format(
             fmt_date(final_date)))
+        if _out_of_window(levels[50]) and _out_of_window(levels[70]):
+            lines.append("Realnie: oba alerty leza poza 80% przedzialem okna - "
+                         "licz sie z tym, ze wiekszosc domknie sie przy deadline.")
 
     # --- wydarzenia: kazdy plan mowi wprost, czy wykonac przed ---
     event_note = None

@@ -17,8 +17,10 @@ na GitHub Pages. Zero backendu, zero build stepu, zero zewnętrznych bibliotek
 
 1. **"Dziś do zrobienia"** - zagregowana lista konkretnych działań na dziś
    ze wszystkich par ("EUR→PLN: wymień 70% po ~4.2958, przed NBP 08.07").
-2. **Trzy karty par** - kurs + zmiana dzienna, sparkline ~250 sesji z pasmem
-   10-90 percentyla i punktem "dziś", 80% przedział na koniec okna wraz z
+2. **Trzy karty par** - kurs + zmiana dzienna, wykres decyzyjny skupiony na
+   oknie: ostatnie ~2 miesiące historii + projekcja 14 dni (stożek 80%
+   przedziału, poziomy zleceń/alertów obu kierunków, dni wydarzeń
+   high-impact, deadline), 80% przedział na koniec okna wraz z
    przeliczeniem na pieniądze ("max zysk z timingu: ok. X PLN na 10 000 EUR"),
    oraz **dwa lustrzane werdykty** (po jednym na kierunek): score, etykieta
    Korzystnie/Neutralnie/Niekorzystnie + pewność i **konkretny plan transz**

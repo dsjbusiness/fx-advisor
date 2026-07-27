@@ -12,6 +12,7 @@ Uklad:
 """
 
 import html
+import math
 from datetime import datetime
 
 import config
@@ -34,49 +35,160 @@ def _esc(t):
     return html.escape(str(t))
 
 
-def _sparkline(sig, width=640, height=110):
-    """Sparkline ~250 sesji: pasmo 10-90 percentyla, linia sredniej,
-    punkt 'dzis'."""
+# kolory kierunkow na wykresie (linie zlecen/alertow)
+CHART_SELL = "#1f7a5c"
+CHART_BUY = "#3d5a99"
+_CHART_LEVELS_BY_BUCKET = {"strong": (90,), "mild": (70, 85),
+                           "weak": (50, 70), "wait": (50, 70)}
+
+
+def _stack_labels(items, min_gap=10.0, y_min=9.0, y_max=147.0):
+    """Rozsuwa etykiety prawej kolumny w pionie, by sie nie nakladaly.
+    items = [(y, ...), ...]; zwraca liste y po korekcie (kolejnosc wg y)."""
+    order = sorted(range(len(items)), key=lambda i: items[i][0])
+    ys = [max(y_min, min(y_max, items[i][0])) for i in order]
+    for k in range(1, len(ys)):
+        ys[k] = max(ys[k], ys[k - 1] + min_gap)
+    if ys and ys[-1] > y_max:
+        ys[-1] = y_max
+        for k in range(len(ys) - 2, -1, -1):
+            ys[k] = min(ys[k], ys[k + 1] - min_gap)
+    out = [0.0] * len(items)
+    for pos, i in enumerate(order):
+        out[i] = ys[pos]
+    return out
+
+
+def _decision_chart(entry, today, width=640, height=150):
+    """Wykres decyzyjny: krotka historia (SPARK_SESSIONS) + okno 14 dni.
+    W strefie okna: stozek 80% przedzialu, poziomy zlecen/alertow obu
+    kierunkow, dni wydarzen high-impact i deadline."""
+    sig = entry["sig"]
     values = sig["spark_values"]
     if len(values) < 2:
         return ""
-    lo = min(min(values), sig["range80_lo"])
-    hi = max(max(values), sig["range80_hi"])
+    top, bot = 16.0, 16.0
+    xl, xr = 6.0, width - 58.0
+    current = sig["current"]
+    half_end = sig["range80_half"]
+
+    last_hist = datetime.strptime(sig["last_date"], "%Y-%m-%d").date()
+    fwd_days = [d for d in planner.business_days(today) if d > last_hist]
+    if not fwd_days:
+        fwd_days = planner.business_days(today)[-1:]
+    n_hist, n_fwd = len(values), len(fwd_days)
+    total = n_hist + n_fwd
+
+    def x(i):
+        return xl + i / (total - 1.0) * (xr - xl)
+
+    x_today = x(n_hist - 1)
+
+    # stozek: polowka rosnie ~sqrt(sesji), koniec = range80_half z raportu
+    halves = [half_end * math.sqrt((k + 1.0) / n_fwd) for k in range(n_fwd)]
+
+    # poziomy zlecen/alertow obu kierunkow (bez DCA/neutral - tam nie ma zlecen)
+    lvl_specs = []
+    for key, color in (("sell", CHART_SELL), ("buy", CHART_BUY)):
+        plan = entry["plans"][key]
+        if plan["dca_override"] or plan["bucket"] == "neutral":
+            continue
+        for q in _CHART_LEVELS_BY_BUCKET[plan["bucket"]]:
+            lvl_specs.append((plan["levels"][q], color))
+
+    lo = min(min(values), current - half_end)
+    hi = max(max(values), current + half_end)
     rng = (hi - lo) or 1e-9
-    pad = rng * 0.06
+    pad = rng * 0.05
     lo, hi = lo - pad, hi + pad
     rng = hi - lo
 
     def y(v):
-        return height - 6 - (v - lo) / rng * (height - 12)
+        return height - bot - (v - lo) / rng * (height - top - bot)
 
-    n = len(values)
+    parts = []
 
-    def x(i):
-        return 4 + i / (n - 1) * (width - 58)
+    # strefa okna + separator "dzis"
+    parts.append('<rect x="{:.1f}" y="{:.1f}" width="{:.1f}" height="{:.1f}" '
+                 'fill="#0b6b7a" fill-opacity="0.035"/>'.format(
+                     x_today, top, xr - x_today, height - top - bot))
+    parts.append('<line x1="{0:.1f}" y1="{1:.1f}" x2="{0:.1f}" y2="{2:.1f}" '
+                 'stroke="#8a99a6" stroke-width="1" stroke-dasharray="3 3"/>'.format(
+                     x_today, top, height - bot))
 
+    # stozek 80%
+    up = ["{:.1f},{:.1f}".format(x(n_hist - 1 + k + 1), y(current + halves[k]))
+          for k in range(n_fwd)]
+    dn = ["{:.1f},{:.1f}".format(x(n_hist - 1 + k + 1), y(current - halves[k]))
+          for k in range(n_fwd - 1, -1, -1)]
+    cone = "{:.1f},{:.1f} ".format(x_today, y(current)) + " ".join(up + dn)
+    parts.append('<polygon points="{}" fill="#0b6b7a" fill-opacity="0.10"/>'.format(cone))
+    parts.append('<line x1="{:.1f}" y1="{:.1f}" x2="{:.1f}" y2="{:.1f}" '
+                 'stroke="#8a99a6" stroke-width="1" stroke-dasharray="3 4" '
+                 'stroke-opacity="0.7"/>'.format(x_today, y(current), xr, y(current)))
+
+    # historia
     pts = " ".join("{:.1f},{:.1f}".format(x(i), y(v)) for i, v in enumerate(values))
-    y10, y90 = y(sig["p10_level"]), y(sig["p90_level"])
-    ymean = y(sig["mean250"])
-    lx, ly = x(n - 1), y(values[-1])
+    parts.append('<polyline points="{}" fill="none" stroke="#0b6b7a" '
+                 'stroke-width="1.6" stroke-linejoin="round" '
+                 'stroke-linecap="round"/>'.format(pts))
 
-    return (
-        '<svg class="spark" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
-        'role="img" aria-label="kurs z ostatnich {n} sesji">'
-        '<rect x="4" y="{y90:.1f}" width="{bw}" height="{bh:.1f}" '
-        'fill="#0b6b7a" fill-opacity="0.07"/>'
-        '<line x1="4" y1="{ym:.1f}" x2="{bx}" y2="{ym:.1f}" stroke="#8a99a6" '
-        'stroke-width="1" stroke-dasharray="4 3"/>'
-        '<polyline points="{pts}" fill="none" stroke="#0b6b7a" stroke-width="1.6" '
-        'stroke-linejoin="round" stroke-linecap="round"/>'
-        '<circle cx="{lx:.1f}" cy="{ly:.1f}" r="3.2" fill="#14212e"/>'
-        '<text x="{tx:.1f}" y="{ty:.1f}" font-size="11" fill="#14212e" '
-        'font-weight="600">dziś</text>'
-        '</svg>'
-    ).format(w=width, h=height, n=len(values),
-             y90=min(y90, y10), bh=abs(y10 - y90), bw=width - 62, bx=width - 58,
-             ym=ymean, pts=pts, lx=lx, ly=ly,
-             tx=min(lx + 6, width - 34), ty=max(12.0, min(ly + 4, height - 4)))
+    # wydarzenia high-impact w oknie
+    for e in entry["high_events"]:
+        d = datetime.strptime(e["date"], "%Y-%m-%d").date()
+        if d not in fwd_days:
+            continue
+        xe = x(n_hist - 1 + fwd_days.index(d) + 1)
+        parts.append('<line x1="{0:.1f}" y1="{1:.1f}" x2="{0:.1f}" y2="{2:.1f}" '
+                     'stroke="#b3382f" stroke-width="1" stroke-dasharray="2 3" '
+                     'stroke-opacity="0.55"/>'.format(xe, top, height - bot))
+        parts.append('<text x="{:.1f}" y="10.5" font-size="9" fill="#b3382f" '
+                     'font-weight="650" text-anchor="middle">{} {:02d}.{:02d}'
+                     '</text>'.format(xe, _esc(e["source"]), d.day, d.month))
+
+    # deadline (ostatni bezpieczny dzien wykonania)
+    final = entry["plans"]["sell"]["final_date"]
+    if final in fwd_days:
+        xd = x(n_hist - 1 + fwd_days.index(final) + 1)
+        parts.append('<line x1="{0:.1f}" y1="{1:.1f}" x2="{0:.1f}" y2="{2:.1f}" '
+                     'stroke="#14212e" stroke-width="1.4"/>'.format(
+                         xd, height - bot, height - bot + 5))
+        parts.append('<text x="{:.1f}" y="{:.1f}" font-size="9" fill="#14212e" '
+                     'font-weight="650" text-anchor="middle">koniec okna '
+                     '{:02d}.{:02d}</text>'.format(
+                         max(46.0, min(xd, xr - 46.0)), height - 2.5,
+                         final.day, final.month))
+
+    # poziomy zlecen/alertow (kropkowane, tylko w strefie okna)
+    lvl_items = []
+    for v, color in lvl_specs:
+        in_range = lo <= v <= hi
+        yy = max(top, min(height - bot, y(v)))
+        parts.append('<line x1="{:.1f}" y1="{:.1f}" x2="{:.1f}" y2="{:.1f}" '
+                     'stroke="{}" stroke-width="1.2" stroke-dasharray="2 3" '
+                     'stroke-opacity="{}"/>'.format(
+                         x_today, yy, xr, yy, color, "0.9" if in_range else "0.4"))
+        arrow = "" if in_range else ("&#8593; " if y(v) < top else "&#8595; ")
+        lvl_items.append((yy, "{}{}".format(arrow, _fmt(v)), color, 650))
+
+    # prawa kolumna etykiet: krance stozka + poziomy
+    lvl_items.append((y(current + half_end), _fmt(current + half_end), "#8a99a6", 400))
+    lvl_items.append((y(current - half_end), _fmt(current - half_end), "#8a99a6", 400))
+    for (_, txt, color, wgt), lab_y in zip(lvl_items, _stack_labels(lvl_items)):
+        parts.append('<text x="{:.1f}" y="{:.1f}" font-size="9" fill="{}" '
+                     'font-weight="{}">{}</text>'.format(
+                         xr + 4, lab_y + 3, color, wgt, txt))
+
+    # punkt i etykieta "dzis"
+    parts.append('<circle cx="{:.1f}" cy="{:.1f}" r="3.0" fill="#14212e"/>'.format(
+        x_today, y(current)))
+    parts.append('<text x="{:.1f}" y="10.5" font-size="9.5" fill="#14212e" '
+                 'font-weight="600" text-anchor="end">dziś</text>'.format(x_today - 4))
+
+    return ('<svg class="spark" viewBox="0 0 {w} {h}" role="img" '
+            'aria-label="ostatnie {n} sesji i projekcja okna {d} dni">{body}'
+            '</svg>').format(w=width, h=height, n=n_hist, d=config.WINDOW_DAYS,
+                             body="".join(parts))
 
 
 def _gauge(score):
@@ -121,7 +233,24 @@ def _verdict_col(plan):
              lines=lines, ev=ev)
 
 
-def _pair_card(entry):
+def _chart_legend(entry):
+    cfg = entry["cfg"]
+    items = ['<span><i class="sw sw-hist"></i>ostatnie {} sesji</span>'.format(
+                 len(entry["sig"]["spark_values"])),
+             '<span><i class="sw sw-cone"></i>80% przedział do końca okna '
+             '({} dni)</span>'.format(config.WINDOW_DAYS)]
+    for key, cls in (("sell", "sw-sell"), ("buy", "sw-buy")):
+        plan = entry["plans"][key]
+        if plan["dca_override"] or plan["bucket"] == "neutral":
+            continue
+        base = cfg["base"]
+        lbl = ("zlecenia: sprzedaż {}".format(base) if key == "sell"
+               else "zlecenia: kupno {}".format(base))
+        items.append('<span><i class="sw {}"></i>{}</span>'.format(cls, _esc(lbl)))
+    return '<div class="chart-legend">{}</div>'.format("".join(items))
+
+
+def _pair_card(entry, today):
     cfg, sig = entry["cfg"], entry["sig"]
     change = sig["change_pct"]
     ch_cls = "up" if change > 0.005 else ("down" if change < -0.005 else "flat")
@@ -151,13 +280,15 @@ def _pair_card(entry):
         '</header>'
         '{badges}'
         '<div class="spark-wrap">{spark}</div>'
+        '{legend}'
         '<div class="range-line">80% przedział na koniec okna ({win} dni): '
         '<b>{lo} - {hi}</b> · {money} · zmienność: {vol}</div>'
         '<div class="verdicts">{vsell}{vbuy}</div>'
         '</article>'
     ).format(label=_esc(cfg["label"]), rate=_fmt(sig["current"]),
              chcls=ch_cls, sign=ch_sign, ch=change, badges=badges,
-             spark=_sparkline(sig), win=config.WINDOW_DAYS,
+             spark=_decision_chart(entry, today), legend=_chart_legend(entry),
+             win=config.WINDOW_DAYS,
              lo=_fmt(sig["range80_lo"]), hi=_fmt(sig["range80_hi"]),
              money=_esc(money_txt), vol=vol_pl,
              vsell=_verdict_col(entry["plans"]["sell"]),
@@ -262,7 +393,8 @@ def _backtest_section(bt):
 
 
 def build_html(analysis):
-    cards = "".join(_pair_card(e) for e in analysis["pair_entries"])
+    today = datetime.strptime(analysis["today"], "%Y-%m-%d").date()
+    cards = "".join(_pair_card(e, today) for e in analysis["pair_entries"])
     banners = ""
     if analysis["demo"]:
         banners += ('<div class="demo-banner">TRYB DEMO - dane syntetyczne. '
@@ -279,6 +411,8 @@ def build_html(analysis):
         generated=_esc(analysis["generated_at"]),
         data_date=_esc(analysis["data_date"]),
         window=config.WINDOW_DAYS,
+        sell_c=CHART_SELL,
+        buy_c=CHART_BUY,
         demo_banner=banners,
         todo=_todo_box(analysis),
         cards=cards,
@@ -345,8 +479,16 @@ TEMPLATE = """<!DOCTYPE html>
   .badge-ECB {{ background:#e9f1f3; color:#0b6b7a; }}
   .badge-Fed, .badge-BLS {{ background:#edeff5; color:#3d5a99; }}
 
-  .spark-wrap {{ margin:12px 0 6px; }}
-  .spark {{ width:100%; height:110px; display:block; }}
+  .spark-wrap {{ margin:12px 0 2px; }}
+  .spark {{ width:100%; height:auto; display:block; }}
+  .chart-legend {{ display:flex; flex-wrap:wrap; gap:3px 16px; font-size:11px;
+    color:var(--muted); margin:2px 0 4px; }}
+  .chart-legend i {{ display:inline-block; width:12px; height:3px; border-radius:2px;
+    margin-right:5px; vertical-align:middle; }}
+  .sw-hist {{ background:#0b6b7a; }}
+  .sw-cone {{ background:#0b6b7a; opacity:0.22; height:8px; }}
+  .sw-sell {{ background:{sell_c}; }}
+  .sw-buy {{ background:{buy_c}; }}
   .range-line {{ font-size:12.5px; color:var(--muted); padding:8px 0 12px;
     border-bottom:1px solid var(--line); }}
   .range-line b {{ color:var(--ink); font-variant-numeric:tabular-nums; }}
@@ -450,9 +592,13 @@ TEMPLATE = """<!DOCTYPE html>
     nie czekaj na wiecej"), nie pewnosc kontynuacji. Pewnosc werdyktu wynika ze
     zgodnosci sygnalow i rezimu zmiennosci (wysoka zmiennosc obniza pewnosc
     i poszerza transze). 80% przedzial: kurs +/- 1.28 x sigma dzienna x sqrt(10).
-    Twarda zasada: calosc wymieniona do konca okna {window} dni, nigdy w dniu
-    wydarzenia high-impact. Dane: kursy referencyjne EBC (Frankfurter API);
-    USD/PLN wyliczany krzyzowo.</p>
+    Wykres pokazuje tylko ostatnie ~2 miesiace i projekcje okna {window} dni
+    (stozek 80%, poziomy zlecen, wydarzenia, deadline) - dluzsza historia
+    (250 sesji) sluzy wylacznie do liczenia percentyli, nie do patrzenia.
+    Poziomy zlecen lezace poza 80% przedzialem okna sa oznaczane jako malo
+    realne. Twarda zasada: calosc wymieniona do konca okna {window} dni, nigdy
+    w dniu wydarzenia high-impact. Dane: kursy referencyjne EBC (Frankfurter
+    API); USD/PLN wyliczany krzyzowo.</p>
     <p><b>Zastrzezenie.</b> Kurs w horyzoncie 2 tygodni jest w duzej mierze
     nieprzewidywalny. Narzedzie porzadkuje fakty i wymusza dyscypline transz -
     nie jest prognoza ani porada inwestycyjna. Decyzje podejmujesz samodzielnie.</p>

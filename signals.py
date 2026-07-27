@@ -135,6 +135,7 @@ def compute_pair_signal(series):
 
     n250 = min(250, len(values))
     w250 = values[-n250:]
+    n_spark = min(config.SPARK_SESSIONS, len(values))
     prev = values[-2] if len(values) >= 2 else values[-1]
 
     sig = dict(comp)
@@ -150,11 +151,8 @@ def compute_pair_signal(series):
         "range80_lo": lo80,
         "range80_hi": hi80,
         "range80_half": half,
-        "spark_values": w250,
-        "spark_dates": dates[-n250:],
-        "p10_level": ind.percentile_level(w250, 10),
-        "p90_level": ind.percentile_level(w250, 90),
-        "mean250": sum(w250) / len(w250),
+        "spark_values": values[-n_spark:],
+        "spark_dates": dates[-n_spark:],
         "values250": w250,
         "n_sessions": len(values),
     })
