@@ -3,16 +3,16 @@
   "last_signature": "jutro Decyzja FOMC ws. stop procentowych (Fed) - wykonaj zaplanowane transze USD→PLN PRZED publikacja",
   "prev": {
     "EURPLN": {
-      "score": 46.1,
+      "score": 28.2,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 53.5,
-      "decile": "top"
+      "score": 16.3,
+      "decile": null
     },
     "EURUSD": {
-      "score": -52.5,
-      "decile": "bottom"
+      "score": -12.3,
+      "decile": null
     }
   }
 }
