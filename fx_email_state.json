@@ -1,17 +1,17 @@
 {
-  "last_sent_date": "2026-07-28",
-  "last_signature": "jutro Decyzja FOMC ws. stop procentowych (Fed) - wykonaj zaplanowane transze USD→PLN PRZED publikacja",
+  "last_sent_date": "2026-07-31",
+  "last_signature": "USD/PLN: kurs 3.7558 wszedl w gorny decyl 250 sesji (korzystnie dla USD→PLN)",
   "prev": {
     "EURPLN": {
-      "score": 28.2,
+      "score": 27.5,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 16.3,
-      "decile": null
+      "score": 12.6,
+      "decile": "top"
     },
     "EURUSD": {
-      "score": -12.3,
+      "score": -5.5,
       "decile": null
     }
   }
