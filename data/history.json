@@ -1907,10 +1907,14 @@
   "2026-08-05": {
    "PLN": 4.306,
    "USD": 1.1554
+  },
+  "2026-08-06": {
+   "PLN": 4.299,
+   "USD": 1.1542
   }
  },
  "source": "frankfurter/ECB",
  "stale": false,
  "stale_days": 0,
- "updated": "2026-08-06"
+ "updated": "2026-08-07"
 }
