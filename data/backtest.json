@@ -1,58 +1,58 @@
 {
- "as_of": "2026-08-05",
+ "as_of": "2026-08-12",
  "engine_version": "2.1",
  "window_sessions": 10,
  "pairs": {
   "EURPLN": {
    "sell": {
-    "edge_bps_vs_dca": 3.23,
-    "edge_bps_vs_day1": 6.41,
-    "edge_bps_vs_lastday": 0.75,
-    "hit_rate_pct": 66.4,
-    "n_windows": 217
+    "edge_bps_vs_dca": 3.25,
+    "edge_bps_vs_day1": 5.68,
+    "edge_bps_vs_lastday": 1.39,
+    "hit_rate_pct": 66.7,
+    "n_windows": 222
    },
    "buy": {
-    "edge_bps_vs_dca": 0.62,
-    "edge_bps_vs_day1": -2.59,
-    "edge_bps_vs_lastday": 3.13,
-    "hit_rate_pct": 59.0,
-    "n_windows": 217
+    "edge_bps_vs_dca": 0.97,
+    "edge_bps_vs_day1": -1.49,
+    "edge_bps_vs_lastday": 2.86,
+    "hit_rate_pct": 59.9,
+    "n_windows": 222
    },
-   "n_sessions": 476
+   "n_sessions": 481
   },
   "USDPLN": {
    "sell": {
-    "edge_bps_vs_dca": 3.01,
-    "edge_bps_vs_day1": 13.3,
-    "edge_bps_vs_lastday": -4.58,
-    "hit_rate_pct": 59.4,
-    "n_windows": 217
+    "edge_bps_vs_dca": 5.25,
+    "edge_bps_vs_day1": 12.71,
+    "edge_bps_vs_lastday": -0.26,
+    "hit_rate_pct": 60.4,
+    "n_windows": 222
    },
    "buy": {
-    "edge_bps_vs_dca": -2.7,
-    "edge_bps_vs_day1": -13.02,
-    "edge_bps_vs_lastday": 4.99,
-    "hit_rate_pct": 57.1,
-    "n_windows": 217
+    "edge_bps_vs_dca": -2.07,
+    "edge_bps_vs_day1": -9.6,
+    "edge_bps_vs_lastday": 3.55,
+    "hit_rate_pct": 57.7,
+    "n_windows": 222
    },
-   "n_sessions": 476
+   "n_sessions": 481
   },
   "EURUSD": {
    "sell": {
-    "edge_bps_vs_dca": -1.75,
-    "edge_bps_vs_day1": -8.44,
-    "edge_bps_vs_lastday": 4.02,
-    "hit_rate_pct": 59.4,
-    "n_windows": 217
+    "edge_bps_vs_dca": -1.32,
+    "edge_bps_vs_day1": -5.93,
+    "edge_bps_vs_lastday": 3.02,
+    "hit_rate_pct": 59.9,
+    "n_windows": 222
    },
    "buy": {
-    "edge_bps_vs_dca": -0.27,
-    "edge_bps_vs_day1": 6.38,
-    "edge_bps_vs_lastday": -6.02,
-    "hit_rate_pct": 54.8,
-    "n_windows": 217
+    "edge_bps_vs_dca": 1.42,
+    "edge_bps_vs_day1": 6.0,
+    "edge_bps_vs_lastday": -2.91,
+    "hit_rate_pct": 55.9,
+    "n_windows": 222
    },
-   "n_sessions": 476
+   "n_sessions": 481
   }
  }
 }
