@@ -3,15 +3,15 @@
   "last_signature": "USD/PLN: kurs 3.7558 wszedl w gorny decyl 250 sesji (korzystnie dla USD→PLN)",
   "prev": {
     "EURPLN": {
-      "score": 18.5,
+      "score": 27.2,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 2.2,
+      "score": 15.3,
       "decile": null
     },
     "EURUSD": {
-      "score": 10.4,
+      "score": -7.3,
       "decile": null
     }
   }
