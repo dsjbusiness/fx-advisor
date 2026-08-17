@@ -505,5 +505,19 @@
       "USDPLN": 3.7234,
       "EURUSD": 1.1567
     }
+  },
+  {
+    "ts": "2026-08-17 14:53",
+    "data_date": "2026-08-17",
+    "scores": {
+      "EURPLN": 31.8,
+      "USDPLN": 2.7,
+      "EURUSD": 13.1
+    },
+    "rates": {
+      "EURPLN": 4.3063,
+      "USDPLN": 3.7146,
+      "EURUSD": 1.1593
+    }
   }
 ]
