@@ -1,58 +1,58 @@
 {
- "as_of": "2026-08-19",
+ "as_of": "2026-08-26",
  "engine_version": "2.1",
  "window_sessions": 10,
  "pairs": {
   "EURPLN": {
    "sell": {
-    "edge_bps_vs_dca": 3.28,
-    "edge_bps_vs_day1": 5.45,
-    "edge_bps_vs_lastday": 1.21,
-    "hit_rate_pct": 67.0,
-    "n_windows": 227
+    "edge_bps_vs_dca": 3.2,
+    "edge_bps_vs_day1": 5.77,
+    "edge_bps_vs_lastday": 0.95,
+    "hit_rate_pct": 66.4,
+    "n_windows": 232
    },
    "buy": {
-    "edge_bps_vs_dca": 0.99,
-    "edge_bps_vs_day1": -1.2,
-    "edge_bps_vs_lastday": 3.1,
-    "hit_rate_pct": 60.4,
-    "n_windows": 227
+    "edge_bps_vs_dca": 0.92,
+    "edge_bps_vs_day1": -1.68,
+    "edge_bps_vs_lastday": 3.2,
+    "hit_rate_pct": 59.9,
+    "n_windows": 232
    },
-   "n_sessions": 486
+   "n_sessions": 491
   },
   "USDPLN": {
    "sell": {
-    "edge_bps_vs_dca": 5.14,
-    "edge_bps_vs_day1": 11.68,
-    "edge_bps_vs_lastday": -0.1,
-    "hit_rate_pct": 60.4,
-    "n_windows": 227
+    "edge_bps_vs_dca": 5.03,
+    "edge_bps_vs_day1": 11.07,
+    "edge_bps_vs_lastday": 1.09,
+    "hit_rate_pct": 59.5,
+    "n_windows": 232
    },
    "buy": {
-    "edge_bps_vs_dca": -2.01,
-    "edge_bps_vs_day1": -8.62,
-    "edge_bps_vs_lastday": 3.34,
-    "hit_rate_pct": 57.7,
-    "n_windows": 227
+    "edge_bps_vs_dca": -2.13,
+    "edge_bps_vs_day1": -8.24,
+    "edge_bps_vs_lastday": 1.92,
+    "hit_rate_pct": 56.9,
+    "n_windows": 232
    },
-   "n_sessions": 486
+   "n_sessions": 491
   },
   "EURUSD": {
    "sell": {
-    "edge_bps_vs_dca": -1.38,
-    "edge_bps_vs_day1": -5.34,
-    "edge_bps_vs_lastday": 2.46,
-    "hit_rate_pct": 59.0,
-    "n_windows": 227
+    "edge_bps_vs_dca": -1.95,
+    "edge_bps_vs_day1": -5.02,
+    "edge_bps_vs_lastday": 0.41,
+    "hit_rate_pct": 57.8,
+    "n_windows": 232
    },
    "buy": {
     "edge_bps_vs_dca": 1.39,
-    "edge_bps_vs_day1": 5.33,
-    "edge_bps_vs_lastday": -2.43,
-    "hit_rate_pct": 55.5,
-    "n_windows": 227
+    "edge_bps_vs_day1": 4.43,
+    "edge_bps_vs_lastday": -0.96,
+    "hit_rate_pct": 55.6,
+    "n_windows": 232
    },
-   "n_sessions": 486
+   "n_sessions": 491
   }
  }
 }
