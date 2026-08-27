@@ -1,17 +1,17 @@
 {
-  "last_sent_date": "2026-07-31",
-  "last_signature": "USD/PLN: kurs 3.7558 wszedl w gorny decyl 250 sesji (korzystnie dla USD→PLN)",
+  "last_sent_date": "2026-08-27",
+  "last_signature": "EUR/PLN: kurs 4.3268 wszedl w gorny decyl 250 sesji (korzystnie dla EUR→PLN)",
   "prev": {
     "EURPLN": {
-      "score": 7.8,
-      "decile": null
+      "score": 56.7,
+      "decile": "top"
     },
     "USDPLN": {
-      "score": -13.9,
+      "score": 6.7,
       "decile": null
     },
     "EURUSD": {
-      "score": 38.7,
+      "score": 31.2,
       "decile": null
     }
   }
