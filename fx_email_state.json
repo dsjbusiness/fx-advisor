@@ -3,15 +3,15 @@
   "last_signature": "EUR→PLN: score przekroczyl +60 (+71)",
   "prev": {
     "EURPLN": {
-      "score": 57.0,
+      "score": 56.5,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 35.1,
+      "score": 32.6,
       "decile": null
     },
     "EURUSD": {
-      "score": 2.3,
+      "score": -0.8,
       "decile": null
     }
   }
