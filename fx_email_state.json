@@ -3,15 +3,12 @@
   "last_signature": "jutro NFP - zatrudnienie w USA (sierpien) (BLS) - wykonaj zaplanowane transze USD→PLN PRZED publikacja",
   "prev": {
     "EURPLN": {
-      "score": 35.6,
       "decile": "top"
     },
     "USDPLN": {
-      "score": 14.5,
       "decile": null
     },
     "EURUSD": {
-      "score": 0.9,
       "decile": null
     }
   }

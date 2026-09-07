@@ -703,17 +703,18 @@
     }
   },
   {
-    "ts": "2026-09-04 17:42",
+    "ts": "2026-09-07 09:46",
     "data_date": "2026-09-04",
-    "scores": {
-      "EURPLN": 35.6,
-      "USDPLN": 14.5,
-      "EURUSD": 0.9
+    "p250": {
+      "EURPLN": 90.8,
+      "USDPLN": 76.4,
+      "EURUSD": 47.2
     },
     "rates": {
       "EURPLN": 4.3148,
       "USDPLN": 3.7126,
       "EURUSD": 1.1622
-    }
+    },
+    "positions_open": 0
   }
 ]
