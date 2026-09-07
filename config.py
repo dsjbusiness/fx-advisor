@@ -76,6 +76,10 @@ FRED_DFF_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFF&cosd={sta
 CARRY_TILT_MIN_BPS = 2.0
 DCA_TRANCHES = 4          # domyslna liczba transz w oknie
 
+# Tryb teoretyczny: gdy nie ma zadnej pozycji, "Dzis do zrobienia" pokazuje
+# dzisiejsze transze planow-szablonow przeliczone na unit_amount kazdej pary.
+THEORETICAL_MODE = True
+
 # ---------------------------------------------------------------------------
 # DOSTAWCY (spread + oplata stala) - do linii "dostawca vs timing"
 # ---------------------------------------------------------------------------

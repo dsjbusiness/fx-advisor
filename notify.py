@@ -59,6 +59,20 @@ def text_summary(analysis):
     lines.append("DZIS DO ZROBIENIA:")
     todo = [("{}: {}".format(p["id"], p["today_action"]))
             for p in analysis["positions"] if p["today_action"]]
+    if not todo and not analysis["positions"] and config.THEORETICAL_MODE:
+        for entry in analysis["pair_entries"]:
+            cfg = entry["cfg"]
+            for key in ("sell", "buy"):
+                plan = entry["plans"][key]
+                if plan["schedule"] and plan["schedule"][0][0].isoformat() == analysis["today"]:
+                    d, w, pct = plan["schedule"][0]
+                    src = cfg["base"] if plan["sell"] else cfg["quote"]
+                    tgt = cfg["quote"] if plan["sell"] else cfg["base"]
+                    todo.append("[teoretycznie] {}→{}: transza {}% = {:,.0f} {} na kazde "
+                                "{:,.0f} {} po ~{:.4f}".format(
+                                    src, tgt, pct, cfg["unit_amount"] * w, src,
+                                    float(cfg["unit_amount"]), src,
+                                    entry["sig"]["current"]).replace(",", " "))
     if todo:
         for t in todo:
             lines.append("  - " + t)

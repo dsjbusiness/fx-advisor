@@ -301,13 +301,35 @@ def _todo_box(analysis):
     for p in analysis["positions"]:
         if p["today_action"]:
             items.append("<b>{}</b>: {}".format(_esc(p["id"]), _esc(p["today_action"])))
+    theo = ""
+    if not analysis["positions"] and config.THEORETICAL_MODE:
+        # tryb teoretyczny: transze szablonow na dzis, na unit_amount pary
+        for entry in analysis["pair_entries"]:
+            cfg = entry["cfg"]
+            for key in ("sell", "buy"):
+                plan = entry["plans"][key]
+                if not plan["schedule"] or plan["schedule"][0][0].isoformat() != analysis["today"]:
+                    continue
+                d, w, pct = plan["schedule"][0]
+                src = cfg["base"] if plan["sell"] else cfg["quote"]
+                tgt = cfg["quote"] if plan["sell"] else cfg["base"]
+                unit = float(cfg["unit_amount"])
+                theo += ("<li><b>{}→{}</b>: transza {}% = {} {} po ~{} "
+                         "<span class='theo-u'>(na każde {} {})</span></li>").format(
+                    src, tgt, pct, _money(unit * w), src, _fmt(entry["sig"]["current"]),
+                    _money(unit), src)
     if items:
         body = "<ul>{}</ul>".format("".join("<li>{}</li>".format(t) for t in items))
     elif analysis["positions"]:
         body = "<p>Dziś żadna pozycja nie ma transzy. Następne transze widać w planach pozycji.</p>"
+    elif theo:
+        body = ("<p class='theo-h'>Tryb teoretyczny - brak pozycji, więc kwoty liczone "
+                "na każde {} jednostek waluty źródłowej wg planów-szablonów z kart par:</p>"
+                "<ul>{}</ul>").format(_money(10000), theo)
     else:
-        body = ("<p>Brak pozycji, więc brak działań. Plany na kartach par to szablony "
-                "„gdybyś dziś zaczynał okno {} dni”.</p>").format(config.WINDOW_DAYS)
+        body = ("<p>Brak pozycji i żaden szablon nie ma dziś transzy. Plany na kartach "
+                "par to szablony „gdybyś dziś zaczynał okno {} dni”.</p>").format(
+                    config.WINDOW_DAYS)
     cov = analysis.get("calendar_coverage_days", 0)
     warn = ""
     if cov < config.CALENDAR_MIN_COVERAGE_DAYS:
@@ -509,6 +531,8 @@ TEMPLATE = """<!DOCTYPE html>
   .todo p {{ margin:0; font-size:13.5px; color:#b9cdd4; }}
   .todo-note {{ margin-top:10px !important; font-size:11px !important; color:#7d97a1 !important; }}
   .todo-warn {{ margin-top:8px !important; font-size:12px !important; color:#f2c37b !important; }}
+  .theo-h {{ margin-bottom:8px !important; font-size:12.5px !important; }}
+  .theo-u {{ font-size:11px; color:#7d97a1; }}
 
   .card {{ background:var(--surface); border:1px solid var(--line); border-radius:12px;
     padding:18px 20px 16px; margin-bottom:18px; }}

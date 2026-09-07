@@ -1,3 +1,24 @@
 {
- "positions": []
+ "positions": [
+  {
+   "id": "P260907-1",
+   "pair": "USDPLN",
+   "direction": "sell",
+   "amount": 8000.0,
+   "deadline": "2026-09-21",
+   "created": "2026-09-07",
+   "fills": [],
+   "note": "wariant A: USD→PLN (alternatywa dla wariantu B, ta sama pula 8 000 USD)"
+  },
+  {
+   "id": "P260907-2",
+   "pair": "EURUSD",
+   "direction": "buy",
+   "amount": 8000.0,
+   "deadline": "2026-09-21",
+   "created": "2026-09-07",
+   "fills": [],
+   "note": "wariant B: USD→EUR (alternatywa dla wariantu A, ta sama pula 8 000 USD)"
+  }
+ ]
 }
