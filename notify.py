@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Alerty e-mail (Resend) + utrwalanie stanu.
+Alerty e-mail (Resend) + utrwalanie stanu (F101).
 
 Mail wychodzi, gdy:
-  1. score zlozony ktoregos kierunku przekroczy +/-60 (przejscie przez prog),
-  2. kurs wejdzie w gorny lub dolny decyl zakresu 250 sesji (przejscie),
-  3. jutro jest dzien wydarzenia high-impact dla pary, ktora ma zalecone
-     (niewykonane) transze - przypomnienie "wykonaj przed publikacja".
+  1. ktoras pozycja ma dzis transze DCA (kwota, para, kurs orientacyjny),
+  2. pozycja jest po terminie albo deadline wypada jutro,
+  3. jutro jest dzien reakcji na wydarzenie high-impact dla pary z otwarta
+     pozycja (nie wymieniaj jutro; jesli masz transze - dzis),
+  4. kurs wszedl w skrajny decyl 250 sesji (kontekst, informacyjnie).
 
 Temat maila zawiera konkretna linie dzialania.
 Limit: raz dziennie, chyba ze pojawi sie nowy powod (inna sygnatura).
@@ -34,25 +35,35 @@ def text_summary(analysis):
         lines.append("UWAGA: zrodla kursow niedostepne - dane starsze o {} dni".format(
             analysis["stale_days"]))
     lines.append("-" * 64)
-    todo = []
+    lines.append("POZYCJE:")
+    if analysis["positions"]:
+        for p in analysis["positions"]:
+            lines.append("  {} {} {} {:,.0f} {} do {} [{}]".format(
+                p["id"], p["label"], p["direction_label"], p["amount"], p["src_ccy"],
+                p["deadline"].isoformat(), p["status"]).replace(",", " "))
+            for l in p["lines"]:
+                lines.append("     " + l)
+    else:
+        lines.append("  brak pozycji")
+    lines.append("")
     for entry in analysis["pair_entries"]:
         cfg, sig = entry["cfg"], entry["sig"]
-        lines.append("{}  kurs {:.4f} ({:+.2f}%)  S={:+.0f}  pewnosc: {}".format(
-            cfg["label"], sig["current"], sig["change_pct"], sig["score"],
-            sig["confidence_bucket"]))
+        nbp = entry.get("nbp") or {}
+        lines.append("{}  EBC {:.4f} ({:+.2f}%){}  p250={:.0f}".format(
+            cfg["label"], sig["current"], sig["change_pct"],
+            "  NBP {:.4f}".format(nbp["last"]) if nbp else "", sig["p250"]))
         for key in ("sell", "buy"):
             p = entry["plans"][key]
-            lines.append("  {:<28} {:>4}  {}".format(
-                p["direction_label"], "{:+.0f}".format(p["score"]), p["verdict"]))
-            if p["today_action"]:
-                todo.append("{}: {}".format(p["direction_label"], p["today_action"]))
+            lines.append("  {:<28} {}".format(p["direction_label"], p["lines"][0]))
         lines.append("")
     lines.append("DZIS DO ZROBIENIA:")
+    todo = [("{}: {}".format(p["id"], p["today_action"]))
+            for p in analysis["positions"] if p["today_action"]]
     if todo:
         for t in todo:
             lines.append("  - " + t)
     else:
-        lines.append("  brak pilnych dzialan")
+        lines.append("  brak transz na dzis")
     return "\n".join(lines)
 
 
@@ -102,57 +113,56 @@ def _decile_flag(p250):
 def decide_email(analysis, state):
     """Czysta decyzja (bez wysylki, bez zapisu):
     (wyslac, powody[], temat, nowy_stan)."""
-    today = str(analysis["generated_at"])[:10]
+    today_s = str(analysis["today"])[:10]
+    today = datetime.strptime(today_s, "%Y-%m-%d").date()
+    tomorrow = (today + timedelta(days=1)).isoformat()
     prev = (state or {}).get("prev") or {}
     reasons = []
+    action = None
     new_prev = {}
+
+    # 1-3: pozycje
+    open_pairs = {}
+    for p in analysis["positions"]:
+        if p["status"] == "open":
+            open_pairs.setdefault(p["pair"], []).append(p)
+        if p["today_action"]:
+            reasons.append("{}: {}".format(p["id"], p["today_action"]))
+            action = action or "{} {}".format(p["id"], p["today_action"])
+        if p["status"] == "overdue":
+            reasons.append("{}: po terminie - wymien reszte {:,.0f} {} dzis".format(
+                p["id"], p["remaining"], p["src_ccy"]).replace(",", " "))
+            action = action or "{} po terminie: wymien {:,.0f} {}".format(
+                p["id"], p["remaining"], p["src_ccy"]).replace(",", " ")
+        elif p["status"] == "open" and p["deadline"].isoformat() == tomorrow:
+            reasons.append("{}: deadline jutro - zostalo {:,.0f} {}".format(
+                p["id"], p["remaining"], p["src_ccy"]).replace(",", " "))
 
     for entry in analysis["pair_entries"]:
         cfg, sig = entry["cfg"], entry["sig"]
         pair = cfg["pair"]
-        s = sig["score"]
         p_state = prev.get(pair) or {}
-        prev_s = p_state.get("score")
         decile = _decile_flag(sig["p250"])
-        new_prev[pair] = {"score": round(s, 1), "decile": decile}
-
+        new_prev[pair] = {"decile": decile}
         base, quote = cfg["base"], cfg["quote"]
-        sell_lbl = "{}→{}".format(base, quote)
-        buy_lbl = "{}→{}".format(quote, base)
 
-        # 1. przejscie score przez +/-60 (alert w KORZYSTNYM kierunku)
-        if prev_s is not None:
-            if s >= config.ALERT_SCORE_CROSS > prev_s:
-                reasons.append("{}: score przekroczyl +{} ({:+.0f})".format(
-                    sell_lbl, config.ALERT_SCORE_CROSS, s))
-            if s <= -config.ALERT_SCORE_CROSS < prev_s:
-                reasons.append("{}: score przekroczyl +{} ({:+.0f})".format(
-                    buy_lbl, config.ALERT_SCORE_CROSS, -s))
+        if pair in open_pairs:
+            for e in entry["high_events"]:
+                if e.get("effective_date", e["date"]) == tomorrow:
+                    reasons.append("{}: jutro dzien reakcji na {} ({}) - nie wymieniaj "
+                                   "jutro; transze na dzis wykonaj dzis".format(
+                                       cfg["label"], e["name"], e["source"]))
 
-        # 2. wejscie kursu w skrajny decyl 250 sesji
+        # 4. kontekst: wejscie w skrajny decyl
         if decile and decile != p_state.get("decile"):
             if decile == "top":
-                reasons.append("{}: kurs {} wszedl w gorny decyl 250 sesji "
-                               "(korzystnie dla {})".format(
-                                   cfg["label"], "{:.4f}".format(sig["current"]), sell_lbl))
+                reasons.append("{}: kurs {:.4f} w gornym decylu roku (kontekst: "
+                               "korzystnie dla {}→{})".format(
+                                   cfg["label"], sig["current"], base, quote))
             else:
-                reasons.append("{}: kurs {} wszedl w dolny decyl 250 sesji "
-                               "(korzystnie dla {})".format(
-                                   cfg["label"], "{:.4f}".format(sig["current"]), buy_lbl))
-
-        # 3. jutro wydarzenie high-impact, a para ma zalecone transze
-        tomorrow = (datetime.strptime(analysis["today"], "%Y-%m-%d")
-                    + timedelta(days=1)).strftime("%Y-%m-%d")
-        for e in entry["high_events"]:
-            if e["date"] != tomorrow:
-                continue
-            for key in ("sell", "buy"):
-                p = entry["plans"][key]
-                if p["bucket"] in ("strong", "mild") and not p["dca_override"]:
-                    reasons.append("jutro {} ({}) - wykonaj zaplanowane transze "
-                                   "{} PRZED publikacja".format(
-                                       e["name"], e["source"],
-                                       sell_lbl if key == "sell" else buy_lbl))
+                reasons.append("{}: kurs {:.4f} w dolnym decylu roku (kontekst: "
+                               "korzystnie dla {}→{})".format(
+                                   cfg["label"], sig["current"], quote, base))
 
     signature = "|".join(sorted(reasons))
     new_state = {
@@ -160,29 +170,14 @@ def decide_email(analysis, state):
         "last_signature": (state or {}).get("last_signature", ""),
         "prev": new_prev,
     }
-
     if not reasons:
         return False, [], "", new_state
-    sent_today = new_state["last_sent_date"] == today
+    sent_today = new_state["last_sent_date"] == today_s
     already_sent = set(new_state["last_signature"].split("|")) if \
         new_state["last_signature"] else set()
     fresh = [r for r in reasons if r not in already_sent]
     if sent_today and not fresh:
-        # wszystkie biezace powody byly juz dzis zgloszone - nie spamuj
         return False, reasons, "", new_state
-
-    # temat: konkretna linia dzialania (najmocniejszy plan), inaczej 1. powod
-    action = None
-    best = -1.0
-    for entry in analysis["pair_entries"]:
-        for key in ("sell", "buy"):
-            p = entry["plans"][key]
-            if p["today_action"] and p["score"] > best:
-                best = p["score"]
-                cfg = entry["cfg"]
-                short = ("{}→{}".format(cfg["base"], cfg["quote"]) if p["sell"]
-                         else "{}→{}".format(cfg["quote"], cfg["base"]))
-                action = "{} {}".format(short, p["today_action"])
     subject = "{}: {}".format(config.EMAIL_SUBJECT_PREFIX, action or reasons[0])
     new_state["_pending_signature"] = signature
     return True, reasons, subject, new_state
@@ -227,14 +222,14 @@ def send_email(analysis, html_body):
             "Content-Type": "application/json",
             # Bez tego urllib wysyla UA "Python-urllib/3.x", ktory bot-protection
             # Cloudflare przed api.resend.com odrzuca z bledem 1010 (403).
-            "User-Agent": "fx-advisor/2.0 (+https://github.com/dsjbusiness/fx-advisor)",
+            "User-Agent": "fx-advisor/3.0 (+https://github.com/dsjbusiness/fx-advisor)",
             "Accept": "application/json",
         },
         method="POST",
     )
     try:
         with urlopen(req, timeout=20) as resp:
-            new_state["last_sent_date"] = str(analysis["generated_at"])[:10]
+            new_state["last_sent_date"] = str(analysis["today"])[:10]
             new_state["last_signature"] = new_state.pop("_pending_signature", "")
             save_email_state(new_state)
             return True, "wyslano (HTTP {}): {}".format(resp.status, subject)
@@ -257,15 +252,15 @@ def send_email(analysis, html_body):
 # ===========================================================================
 
 def save_state(analysis, path=None):
-    """Dopisuje skrot dzisiejszej oceny do pliku JSON (audyt)."""
     path = path or config.STATE_FILE
     snapshot = {
         "ts": analysis["generated_at"],
         "data_date": analysis["data_date"],
-        "scores": {e["cfg"]["pair"]: round(e["sig"]["score"], 1)
-                   for e in analysis["pair_entries"]},
+        "p250": {e["cfg"]["pair"]: round(e["sig"]["p250"], 1)
+                 for e in analysis["pair_entries"]},
         "rates": {e["cfg"]["pair"]: round(e["sig"]["current"], 4)
                   for e in analysis["pair_entries"]},
+        "positions_open": sum(1 for p in analysis["positions"] if p["status"] == "open"),
     }
     history = []
     if os.path.exists(path):

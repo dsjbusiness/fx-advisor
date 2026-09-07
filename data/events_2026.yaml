@@ -14,8 +14,7 @@
 #
 # Zrodla dat:
 #   NBP RPP: nbp.pl -> Polityka pieniezna -> harmonogram posiedzen
-#            (wrzesien-grudzien wg konwencji pierwszy wt-sr miesiaca; ZWERYFIKUJ
-#             na nbp.pl gdy NBP opublikuje/zmieni harmonogram II polrocza)
+#            (II polrocze 2026 zweryfikowane 2026-09-07: 2.09, 7.10, 4.11, 2.12)
 #   ECB: ecb.europa.eu (decyzje w czwartki, ogloszenie ~14:15 CET)
 #   Fed/FOMC: federalreserve.gov (ogloszenie ~20:00 czasu PL, drugi dzien)
 #   US CPI: bls.gov schedule (~14:30 czasu PL); daty orientacyjne - zweryfikuj
@@ -62,7 +61,7 @@ events:
     name: Decyzja RPP ws. stop procentowych (projekcja NBP)
     currencies: [PLN]
     impact: high
-  - date: 2026-09-09
+  - date: 2026-09-02
     source: NBP
     name: Decyzja RPP ws. stop procentowych
     currencies: [PLN]
@@ -77,7 +76,7 @@ events:
     name: Decyzja RPP ws. stop procentowych (projekcja NBP)
     currencies: [PLN]
     impact: high
-  - date: 2026-12-16
+  - date: 2026-12-02
     source: NBP
     name: Decyzja RPP ws. stop procentowych
     currencies: [PLN]
@@ -213,12 +212,12 @@ events:
     name: Inflacja CPI w USA (sierpien)
     currencies: [USD]
     impact: high
-  - date: 2026-10-13
+  - date: 2026-10-14
     source: BLS
     name: Inflacja CPI w USA (wrzesien)
     currencies: [USD]
     impact: high
-  - date: 2026-11-12
+  - date: 2026-11-10
     source: BLS
     name: Inflacja CPI w USA (pazdziernik)
     currencies: [USD]

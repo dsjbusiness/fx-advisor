@@ -1,0 +1,407 @@
+# FX Advisor - kalendarz wydarzen makro 2027
+#
+# Format jak w events_2026.yaml (parser: data_layer.load_events).
+#   date = dzien OGLOSZENIA (dla posiedzen: drugi dzien).
+#   Publikacje po fixingu EBC (Fed, BLS) sa przez narzedzie przesuwane na
+#   nastepna sesje jako "dzien reakcji" (config.LATE_SOURCES).
+#
+# Stan weryfikacji (2026-09-07):
+#   ECB  - ZWERYFIKOWANE z ecb.europa.eu (kalendarz posiedzen 2027)
+#   Fed  - ZWERYFIKOWANE z federalreserve.gov (kalendarz FOMC 2027, tentatywny
+#          do potwierdzenia na poprzednim posiedzeniu)
+#   NBP  - ORIENTACYJNE: harmonogram RPP 2027 jeszcze nieopublikowany;
+#          wg konwencji 2026 (pierwsza wt-sr miesiaca; styczen/kwiecien/lipiec
+#          druga). ZWERYFIKUJ na nbp.pl po publikacji (zwykle w XI-XII 2026).
+#   BLS  - ORIENTACYJNE: harmonogram 2027 nieopublikowany; CPI ~10-14. dnia,
+#          NFP pierwszy piatek. ZWERYFIKUJ na bls.gov/schedule (publikacja XII 2026).
+#   GUS  - ORIENTACYJNE wg konwencji (flash ostatni dzien roboczy, final ~15.).
+
+year: 2027
+
+events:
+  # --- NBP / RPP (PLN) - ORIENTACYJNE ---
+  - date: 2027-01-13
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-02-03
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-03-03
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (projekcja NBP, do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-04-07
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-05-05
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-06-02
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-07-07
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (projekcja NBP, do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-09-01
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-10-06
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-11-03
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (projekcja NBP, do weryfikacji)
+    currencies: [PLN]
+    impact: high
+  - date: 2027-12-01
+    source: NBP
+    name: Decyzja RPP ws. stop procentowych (do weryfikacji)
+    currencies: [PLN]
+    impact: high
+
+  # --- EBC (EUR) - zweryfikowane ---
+  - date: 2027-02-04
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych
+    currencies: [EUR]
+    impact: high
+  - date: 2027-03-18
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych (projekcje)
+    currencies: [EUR]
+    impact: high
+  - date: 2027-04-29
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych
+    currencies: [EUR]
+    impact: high
+  - date: 2027-06-10
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych (projekcje)
+    currencies: [EUR]
+    impact: high
+  - date: 2027-07-22
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych
+    currencies: [EUR]
+    impact: high
+  - date: 2027-09-09
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych (projekcje)
+    currencies: [EUR]
+    impact: high
+  - date: 2027-10-28
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych
+    currencies: [EUR]
+    impact: high
+  - date: 2027-12-16
+    source: ECB
+    name: Decyzja EBC ws. stop procentowych (projekcje)
+    currencies: [EUR]
+    impact: high
+
+  # --- Fed / FOMC (USD) - zweryfikowane (tentatywne wg Fed) ---
+  - date: 2027-01-27
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych
+    currencies: [USD]
+    impact: high
+  - date: 2027-03-17
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych (projekcje)
+    currencies: [USD]
+    impact: high
+  - date: 2027-04-28
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych
+    currencies: [USD]
+    impact: high
+  - date: 2027-06-09
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych (projekcje)
+    currencies: [USD]
+    impact: high
+  - date: 2027-07-28
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych
+    currencies: [USD]
+    impact: high
+  - date: 2027-09-15
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych (projekcje)
+    currencies: [USD]
+    impact: high
+  - date: 2027-10-27
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych
+    currencies: [USD]
+    impact: high
+  - date: 2027-12-08
+    source: Fed
+    name: Decyzja FOMC ws. stop procentowych (projekcje)
+    currencies: [USD]
+    impact: high
+
+  # --- US CPI (BLS) - ORIENTACYJNE ---
+  - date: 2027-01-13
+    source: BLS
+    name: Inflacja CPI w USA (grudzien, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-02-10
+    source: BLS
+    name: Inflacja CPI w USA (styczen, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-03-10
+    source: BLS
+    name: Inflacja CPI w USA (luty, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-04-13
+    source: BLS
+    name: Inflacja CPI w USA (marzec, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-05-12
+    source: BLS
+    name: Inflacja CPI w USA (kwiecien, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-06-10
+    source: BLS
+    name: Inflacja CPI w USA (maj, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-07-14
+    source: BLS
+    name: Inflacja CPI w USA (czerwiec, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-08-11
+    source: BLS
+    name: Inflacja CPI w USA (lipiec, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-09-14
+    source: BLS
+    name: Inflacja CPI w USA (sierpien, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-10-13
+    source: BLS
+    name: Inflacja CPI w USA (wrzesien, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-11-10
+    source: BLS
+    name: Inflacja CPI w USA (pazdziernik, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-12-10
+    source: BLS
+    name: Inflacja CPI w USA (listopad, do weryfikacji)
+    currencies: [USD]
+    impact: high
+
+  # --- US NFP (BLS) - ORIENTACYJNE (pierwszy piatek) ---
+  - date: 2027-01-08
+    source: BLS
+    name: NFP - zatrudnienie w USA (grudzien, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-02-05
+    source: BLS
+    name: NFP - zatrudnienie w USA (styczen, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-03-05
+    source: BLS
+    name: NFP - zatrudnienie w USA (luty, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-04-02
+    source: BLS
+    name: NFP - zatrudnienie w USA (marzec, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-05-07
+    source: BLS
+    name: NFP - zatrudnienie w USA (kwiecien, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-06-04
+    source: BLS
+    name: NFP - zatrudnienie w USA (maj, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-07-02
+    source: BLS
+    name: NFP - zatrudnienie w USA (czerwiec, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-08-06
+    source: BLS
+    name: NFP - zatrudnienie w USA (lipiec, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-09-03
+    source: BLS
+    name: NFP - zatrudnienie w USA (sierpien, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-10-08
+    source: BLS
+    name: NFP - zatrudnienie w USA (wrzesien, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-11-05
+    source: BLS
+    name: NFP - zatrudnienie w USA (pazdziernik, do weryfikacji)
+    currencies: [USD]
+    impact: high
+  - date: 2027-12-03
+    source: BLS
+    name: NFP - zatrudnienie w USA (listopad, do weryfikacji)
+    currencies: [USD]
+    impact: high
+
+  # --- PL CPI (GUS) - ORIENTACYJNE, wplyw sredni ---
+  - date: 2027-01-15
+    source: GUS
+    name: PL CPI - odczyt finalny (grudzien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-01-29
+    source: GUS
+    name: PL CPI - szybki szacunek (styczen)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-02-15
+    source: GUS
+    name: PL CPI - odczyt finalny (styczen)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-02-26
+    source: GUS
+    name: PL CPI - szybki szacunek (luty)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-03-15
+    source: GUS
+    name: PL CPI - odczyt finalny (luty)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-03-31
+    source: GUS
+    name: PL CPI - szybki szacunek (marzec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-04-15
+    source: GUS
+    name: PL CPI - odczyt finalny (marzec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-04-30
+    source: GUS
+    name: PL CPI - szybki szacunek (kwiecien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-05-14
+    source: GUS
+    name: PL CPI - odczyt finalny (kwiecien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-05-31
+    source: GUS
+    name: PL CPI - szybki szacunek (maj)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-06-15
+    source: GUS
+    name: PL CPI - odczyt finalny (maj)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-06-30
+    source: GUS
+    name: PL CPI - szybki szacunek (czerwiec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-07-15
+    source: GUS
+    name: PL CPI - odczyt finalny (czerwiec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-07-30
+    source: GUS
+    name: PL CPI - szybki szacunek (lipiec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-08-13
+    source: GUS
+    name: PL CPI - odczyt finalny (lipiec)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-08-31
+    source: GUS
+    name: PL CPI - szybki szacunek (sierpien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-09-15
+    source: GUS
+    name: PL CPI - odczyt finalny (sierpien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-09-30
+    source: GUS
+    name: PL CPI - szybki szacunek (wrzesien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-10-15
+    source: GUS
+    name: PL CPI - odczyt finalny (wrzesien)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-10-29
+    source: GUS
+    name: PL CPI - szybki szacunek (pazdziernik)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-11-15
+    source: GUS
+    name: PL CPI - odczyt finalny (pazdziernik)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-11-30
+    source: GUS
+    name: PL CPI - szybki szacunek (listopad)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-12-15
+    source: GUS
+    name: PL CPI - odczyt finalny (listopad)
+    currencies: [PLN]
+    impact: medium
+  - date: 2027-12-30
+    source: GUS
+    name: PL CPI - szybki szacunek (grudzien)
+    currencies: [PLN]
+    impact: medium

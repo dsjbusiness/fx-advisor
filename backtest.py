@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-Walk-forward backtest: narzedzie musi samo udowodnic swoja przewage.
+Walk-forward backtest na PELNEJ historii (F101).
 
-Dla kazdego mozliwego okna 14-dniowego (10 sesji) w calej cache'owanej
-historii symulujemy plany transz, ktore silnik wygenerowalby dzien po dniu
-(score przeliczany codziennie WYLACZNIE z danych dostepnych danego dnia,
-z twarda zasada deadline) i liczymy osiagniety kurs wazony wolumenem.
+Okna ROZLACZNE (krok = WINDOW_SESSIONS), zeby srednia i przedzial ufnosci
+mialy sens - okna przesuwane o 1 sesje nakladaja sie w 90% i zawyzaja
+istotnosc ~3x.
 
-Benchmarki: (a) wszystko 1. dnia, (b) wszystko ostatniego dnia,
-(c) rowne DCA. Raport per para i kierunek: srednia przewaga vs DCA w pb,
-hit-rate (% okien lepszych niz DCA), liczba okien.
+Dla kazdej pary i kierunku liczymy vs DCA (rowne transze):
+  engine   - legacy silnik score (plan transz sterowany score, jak w v2)
+  day1     - wszystko 1. dnia
+  lastday  - wszystko ostatniego dnia
+  ceiling  - najlepszy dzien okna (pelna wiedza o przyszlosci) = sufit timingu
+Raportujemy srednia (pb), odchylenie, n, t, 90% CI, hit-rate oraz miary
+ryzyka: rozrzut wyniku DCA vs lump sum (po to jest DCA).
 
-Cache w data/backtest.json: pelny przelicz najwyzej raz na tydzien albo
-gdy przybedzie >= BACKTEST_MIN_NEW_SESSIONS nowych sesji / zmieni sie
-wersja silnika.
+Osobno "recent": ostatnie BACKTEST_RECENT_SESSIONS sesji (okres, na ktorym
+silnik v2 byl strojony) - do porownania z pelna historia.
 """
 
 import json
+import math
 import os
 from datetime import date, datetime
-
-import math
 
 import config
 import indicators as ind
@@ -28,32 +29,91 @@ import signals
 import planner
 
 
-def _window_metrics(achieved, day1, lastday, dca, sell):
-    """Przewaga w punktach bazowych vs benchmarki (dodatnia = lepiej)."""
+def _stats(edges):
+    n = len(edges)
+    if n == 0:
+        return None
+    mean = sum(edges) / n
+    var = sum((e - mean) ** 2 for e in edges) / n
+    sd = math.sqrt(var)
+    se = sd / math.sqrt(n) if n > 1 else 0.0
+    t = mean / se if se > 0 else 0.0
+    z = config.BACKTEST_CI_Z
+    return {
+        "edge_bps_vs_dca": round(mean, 2),
+        "sd_bps": round(sd, 1),
+        "n_windows": n,
+        "t_stat": round(t, 2),
+        "ci90_lo": round(mean - z * se, 2),
+        "ci90_hi": round(mean + z * se, 2),
+        "hit_rate_pct": round(100.0 * sum(1 for e in edges if e > 0) / n, 1),
+        "verdict": "edge" if (mean - z * se) > 0 else "no_edge",
+    }
+
+
+def _edge(achieved, bench, sell):
+    """Przewaga w pb vs benchmark (dodatnia = lepiej dla kierunku)."""
     if sell:
-        e = lambda bench: (achieved - bench) / bench * 10000.0
-    else:
-        e = lambda bench: (bench - achieved) / bench * 10000.0
-    return {"vs_dca": e(dca), "vs_day1": e(day1), "vs_last": e(lastday)}
+        return (achieved - bench) / bench * 1e4
+    return (bench - achieved) / bench * 1e4
+
+
+def _direction_windows(values, dates, score_by_t, sell, high_dates, t0s, n_win):
+    eng, d1, dl, ceil = [], [], [], []
+    lump_vs_d1 = []
+    dca_vs_d1 = []
+    for t0 in t0s:
+        rates_w = values[t0:t0 + n_win]
+        dca = sum(rates_w) / n_win
+        scores_w = [score_by_t[t] if sell else -score_by_t[t]
+                    for t in range(t0, t0 + n_win)]
+        w250 = values[t0 - 249:t0 + 1]
+        vol_d = ind.realized_vol_daily(values[:t0 + 1], config.VOL_SESSIONS)
+        half = config.RANGE_Z * vol_d * math.sqrt(n_win) * values[t0]
+        levels = planner.plan_levels(w250, sell, values[t0], half)
+        high_next = [dates[t0 + j + 1] in high_dates for j in range(n_win - 1)] + [False]
+        achieved = planner.simulate_window(scores_w, rates_w, sell, levels,
+                                           high_event_next=high_next)
+        eng.append(_edge(achieved, dca, sell))
+        d1.append(_edge(rates_w[0], dca, sell))
+        dl.append(_edge(rates_w[-1], dca, sell))
+        best = max(rates_w) if sell else min(rates_w)
+        ceil.append(_edge(best, dca, sell))
+        # ryzyko: wynik lump sum ostatniego dnia vs 1. dnia, i DCA vs 1. dnia
+        lump_vs_d1.append(_edge(rates_w[-1], rates_w[0], sell))
+        dca_vs_d1.append(_edge(dca, rates_w[0], sell))
+
+    def sd(xs):
+        if not xs:
+            return 0.0
+        m = sum(xs) / len(xs)
+        return math.sqrt(sum((x - m) ** 2 for x in xs) / len(xs))
+
+    return {
+        "engine": _stats(eng),
+        "day1": _stats(d1),
+        "lastday": _stats(dl),
+        "ceiling_bps": round(sum(ceil) / len(ceil), 1) if ceil else None,
+        "sd_lump_bps": round(sd(lump_vs_d1), 1),
+        "sd_dca_bps": round(sd(dca_vs_d1), 1),
+    }
 
 
 def run_backtest(series, events, today=None):
-    """Pelny przelicz. series = data_layer.series_from_history(...),
-    events = data_layer.load_events(). Zwraca dict wynikow."""
     today = today or date.today()
     n_win = config.WINDOW_SESSIONS
 
-    # zbiory dat wydarzen high-impact per waluta
     high_by_ccy = {}
     for e in events:
         if e["impact"] != "high":
             continue
         for c in e["currencies"]:
-            high_by_ccy.setdefault(c, set()).add(e["date"])
+            high_by_ccy.setdefault(c, set()).add(e.get("effective_date", e["date"]))
 
     results = {"as_of": today.isoformat(),
                "engine_version": config.ENGINE_VERSION,
                "window_sessions": n_win,
+               "windows": "non-overlapping",
                "pairs": {}}
 
     for pcfg in config.PAIRS:
@@ -62,7 +122,7 @@ def run_backtest(series, events, today=None):
         dates = [d for d, _ in ser]
         values = [v for _, v in ser]
         n = len(values)
-        results["pairs"][pair] = {}
+        results["pairs"][pair] = {"n_sessions": n}
         if n < config.MIN_HISTORY + n_win:
             continue
 
@@ -71,44 +131,21 @@ def run_backtest(series, events, today=None):
         for c in pcfg["affected_by"]:
             high_dates |= high_by_ccy.get(c, set())
 
-        n_sessions_used = n
+        # okna rozlaczne od konca (ostatnie okno konczy sie na ostatniej sesji)
+        t0s = list(range(n - n_win, config.MIN_HISTORY - 1, -n_win))
+        t0s.reverse()
+        recent_from = n - config.BACKTEST_RECENT_SESSIONS
+        t0s_recent = [t0 for t0 in t0s if t0 >= recent_from]
+
+        rec = results["pairs"][pair]
+        rec["period"] = [dates[t0s[0]] if t0s else None, dates[-1]]
         for sell in (True, False):
-            edges = []
-            for t0 in range(config.MIN_HISTORY, n - n_win + 1):
-                rates_w = values[t0:t0 + n_win]
-                scores_w = [score_by_t[t] if sell else -score_by_t[t]
-                            for t in range(t0, t0 + n_win)]
-                w250 = values[t0 - 249:t0 + 1]
-                # te same poziomy, ktore plan wypisalby uzytkownikowi 1. dnia
-                vol_d = ind.realized_vol_daily(values[:t0 + 1],
-                                               config.VOL_SESSIONS)
-                half = (config.RANGE_Z * vol_d
-                        * math.sqrt(config.WINDOW_SESSIONS) * values[t0])
-                levels = planner.plan_levels(w250, sell, values[t0], half)
-                high_next = [dates[t0 + j + 1] in high_dates
-                             for j in range(n_win - 1)] + [False]
-                achieved = planner.simulate_window(
-                    scores_w, rates_w, sell, levels, high_event_next=high_next)
-                dca = sum(rates_w) / len(rates_w)
-                edges.append(_window_metrics(
-                    achieved, rates_w[0], rates_w[-1], dca, sell))
-
-            n_windows = len(edges)
             key = "sell" if sell else "buy"
-            if n_windows == 0:
-                results["pairs"][pair][key] = None
-                continue
-            mean = lambda k: sum(e[k] for e in edges) / n_windows
-            hits = sum(1 for e in edges if e["vs_dca"] > 0)
-            results["pairs"][pair][key] = {
-                "edge_bps_vs_dca": round(mean("vs_dca"), 2),
-                "edge_bps_vs_day1": round(mean("vs_day1"), 2),
-                "edge_bps_vs_lastday": round(mean("vs_last"), 2),
-                "hit_rate_pct": round(100.0 * hits / n_windows, 1),
-                "n_windows": n_windows,
-            }
-        results["pairs"][pair]["n_sessions"] = n_sessions_used
-
+            rec[key] = _direction_windows(values, dates, score_by_t, sell,
+                                          high_dates, t0s, n_win)
+            rec[key]["recent"] = (_direction_windows(values, dates, score_by_t, sell,
+                                                     high_dates, t0s_recent, n_win)["engine"]
+                                  if len(t0s_recent) >= 5 else None)
     return results
 
 
@@ -146,7 +183,6 @@ def _cache_valid(cached, series, today):
         return False
     if (today - as_of).days >= config.BACKTEST_MAX_AGE_DAYS:
         return False
-    # przelicz, gdy przybylo duzo nowych sesji
     for pcfg in config.PAIRS:
         pair = pcfg["pair"]
         cached_n = (cached["pairs"].get(pair) or {}).get("n_sessions", 0)
@@ -156,8 +192,6 @@ def _cache_valid(cached, series, today):
 
 
 def get_backtest(series, events, force=False, path=None, today=None):
-    """Zwraca (wyniki, czy_przeliczono). Dzienne uruchomienie korzysta
-    z cache; pelny przelicz raz na tydzien / przy zmianie wersji."""
     today = today or date.today()
     path = path or config.BACKTEST_FILE
     cached = load_cached(path)

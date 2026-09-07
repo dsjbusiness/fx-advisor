@@ -1,0 +1,13 @@
+{
+ "as_of": "2026-09-07",
+ "rates": {
+  "EUR": 2.25,
+  "PLN": 3.75,
+  "USD": 3.63
+ },
+ "sources": {
+  "EUR": "ECB DFR od 2026-06-17",
+  "PLN": "config 2026-09-07",
+  "USD": "FRED DFF 2026-09-03"
+ }
+}

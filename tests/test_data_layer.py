@@ -73,7 +73,10 @@ class TestFetchRange(unittest.TestCase):
                 raise TimeoutError("The read operation timed out")
             return {"rates": {"2026-07-23": {"PLN": 4.28, "USD": 1.085}}}
 
-        with _fast_retries(), _Patch(_http_get_json=fake_json):
+        def sdmx_down(url, timeout=None):
+            raise TimeoutError("sdmx timed out")
+
+        with _fast_retries(), _Patch(_http_get_json=fake_json, _http_get=sdmx_down):
             out = data_layer._fetch_range(date(2026, 7, 23), date(2026, 7, 23))
 
         self.assertEqual(out, {"2026-07-23": {"PLN": 4.28, "USD": 1.085}})
@@ -86,6 +89,8 @@ class TestFetchRange(unittest.TestCase):
             raise HTTPError(url, 520, "origin error", {}, None)
 
         def fake_get(url, timeout=None):
+            if "data-api.ecb.europa.eu" in url:
+                raise HTTPError(url, 520, "origin error", {}, None)
             self.assertIn("ecb.europa.eu", url)
             return ECB_XML.encode("utf-8")
 
@@ -111,7 +116,9 @@ class TestFetchRange(unittest.TestCase):
         def fake_json(url, timeout=None):
             return {"rates": {}}
 
-        with _fast_retries(), _Patch(_http_get_json=fake_json):
+        # SDMX odpowiada HTTP 204 (puste cialo) - to tez poprawny wynik
+        with _fast_retries(), _Patch(_http_get_json=fake_json,
+                                     _http_get=lambda url, timeout=None: b""):
             self.assertEqual(
                 data_layer._fetch_range(date(2026, 7, 24), date(2026, 7, 24)), {})
 

@@ -1,173 +1,180 @@
 # FX Advisor
 
-Narzędzie do **timingu wymiany walut w kroczącym oknie 14 dni** (treasury
-firmowe, nie spekulacja) dla trzech par: **EUR/PLN, USD/PLN, EUR/USD** -
-każda para pokazana raz, z dwoma lustrzanymi kierunkami.
+Narzędzie do **dyscypliny wymiany walut w oknie 14 dni** (treasury firmowe,
+nie spekulacja) dla trzech par: **EUR/PLN, USD/PLN, EUR/USD**.
 
-Statyczny panel HTML generowany codziennie przez GitHub Actions i publikowany
-na GitHub Pages. Zero backendu, zero build stepu, zero zewnętrznych bibliotek
-(sama biblioteka standardowa Pythona), wykresy jako inline SVG.
+Statyczny panel HTML generowany w dni robocze przez GitHub Actions i publikowany
+na GitHub Pages: https://dsjbusiness.github.io/fx-advisor/. Zero backendu, zero
+build stepu, zero zewnętrznych bibliotek (sama biblioteka standardowa Pythona).
 
-- Dane: kursy referencyjne EBC z **Frankfurter API** (EUR/PLN, EUR/USD;
-  USD/PLN liczony krzyżowo), ~420 sesji w cache `data/history.json`,
-  aktualizacja przyrostowa (dociągane tylko brakujące daty).
-- Alerty e-mail przez **Resend** (opcjonalnie).
+## Co zmieniło się w v3 (F101, wrzesień 2026)
+
+Audyt na pełnej historii fixingów EBC (1999-2026, 27 lat, ~680 rozłącznych okien
+na parę) pokazał, że aktywny plan transz sterowany score z v2 **przegrywa z DCA
+o 5-10 pb na okno** w każdej parze, z 90% przedziałem ufności w całości poniżej
+zera. Dodatnia "przewaga" +3 pb widoczna wcześniej na stronie pochodziła z 2 lat
+danych, na których silnik był strojony, i z nakładających się okien.
+
+Dlatego v3 nie przewiduje kursu. Robi cztery rzeczy, które mają pokrycie w danych
+albo w arytmetyce:
+
+1. **DCA** - równe transze rozłożone po oknie. Ten sam oczekiwany kurs co lump
+   sum, o ~45% mniejszy rozrzut wyniku.
+2. **Przechył pod carry** - gdy waluta docelowa jest oprocentowana wyżej niż
+   źródłowa, wcześniejsze wykonanie ma dodatnią wartość oczekiwaną (różnica stóp
+   × dni/365, dla EUR→PLN ok. +6 pb na 14 dni przy stopach z IX 2026). Transze
+   są wtedy front-loaded
+   (40/30/20/10), przy ujemnym carry back-loaded. Działa tylko, gdy gotówka leży
+   na oprocentowanym rachunku.
+3. **Omijanie dni reakcji** na wydarzenia o wysokim wpływie (RPP, EBC, FOMC,
+   CPI, NFP). FOMC i dane z USA publikowane są po fixingu EBC, więc dniem reakcji
+   jest następna sesja.
+4. **Pozycje** - realne kwoty z deadline. Plan liczy się dla RESZTY kwoty
+   i RESZTY dni, a nie od nowa co dzień.
+
+Score z v2 (percentyl 250 sesji, tendencja) został jako **kontekst** na karcie
+pary i nie steruje transzami.
 
 ## Co dostajesz
 
-1. **"Dziś do zrobienia"** - zagregowana lista konkretnych działań na dziś
-   ze wszystkich par ("EUR→PLN: wymień 70% po ~4.2958, przed NBP 08.07").
-2. **Trzy karty par** - kurs + zmiana dzienna, wykres decyzyjny skupiony na
-   oknie: ostatnie ~2 miesiące historii + projekcja 14 dni (stożek 80%
-   przedziału, poziomy zleceń/alertów obu kierunków, dni wydarzeń
-   high-impact, deadline), 80% przedział na koniec okna wraz z
-   przeliczeniem na pieniądze ("max zysk z timingu: ok. X PLN na 10 000 EUR"),
-   oraz **dwa lustrzane werdykty** (po jednym na kierunek): score, etykieta
-   Korzystnie/Neutralnie/Niekorzystnie + pewność i **konkretny plan transz**
-   (procenty, poziomy kursu, daty).
-3. **Tabela wydarzeń** na 14 dni (RPP, EBC, FOMC, US CPI, NFP, polskie CPI).
-4. **"Skuteczność historyczna"** - backtest walk-forward, który musi
-   udowodnić przewagę silnika; gdy przewaga vs DCA jest <= 0, strona wprost
-   zaleca DCA dla tego kierunku.
+1. **Twoje pozycje** - każda z paskiem postępu, planem reszty (kwoty i daty),
+   średnim kursem dotychczasowych transz, statusem (otwarta / po terminie /
+   zamknięta).
+2. **Dziś do zrobienia** - transze z pozycji na dziś, z kursem orientacyjnym.
+3. **Trzy karty par** - fixing EBC i NBP, kurs do księgowania (NBP z poprzedniego
+   dnia roboczego), wykres (2 miesiące historii, stożek 80% na 14 dni, dni reakcji,
+   transze), linia **dostawca vs timing** ("zmiana dostawcy daje X zł na 10 000,
+   timing w oknie maksymalnie Y zł, realnie ~0"), dwa kierunki z planem-szablonem
+   DCA i kontekstem.
+4. **Tabela wydarzeń** z datą publikacji i dniem reakcji.
+5. **Backtest** na pełnej historii: okna rozłączne, 90% CI, hit-rate, sufit
+   timingu przy pełnej wiedzy o przyszłości, rozrzut lump sum vs DCA.
 
-## Metodologia (skrót)
+## Pozycje
 
-Score S w [-100, +100] liczony **raz na parę** z perspektywy sprzedaży waluty
-bazowej; kierunek kupna = dokładnie -S.
+Kwota w walucie źródłowej, kierunek `sell` (sprzedaj bazę pary, np. EUR→PLN) lub
+`buy` (kup bazę, np. PLN→EUR), deadline.
 
-- **Poziom (waga 0.55)**: mieszany percentyl dzisiejszego kursu
-  0.2 x 30 sesji + 0.3 x 90 + 0.5 x 250, mapowany na [-100, +100].
-- **Tendencja (0.25)**: zwrot z 10 sesji normalizowany zmiennością
-  20-sesyjną (miara t-podobna), gładko obcinany tanh.
-- **Pilność mean-reversion (0.20)**: %B Bollingera (20, 2) i RSI(14).
-  Skrajne wykupienie przy korzystnym poziomie = "bierz zysk TERAZ, nie czekaj
-  na więcej" - podnosi pilność werdyktu, nie pewność kontynuacji.
-  Symetrycznie dla wyprzedania.
-- **Reżim zmienności**: 20-sesyjna zmienność zannualizowana vs własny rozkład
-  roczny (niska/normalna/wysoka). Wysoka obniża pewność i poszerza transze.
-- **80% przedział**: kurs +/- 1.28 x sigma dzienna x sqrt(10 sesji);
-  połowa szerokości przeliczana na PLN/USD na 10 000 jednostek bazy -
-  to trzyma oczekiwania w ryzach.
-- Pewność (Wysoka/Średnia/Niska) ze zgodności sygnałów i reżimu zmienności.
+Z GitHuba: Actions → "FX Advisor" → Run workflow → `action: add` + para, kierunek,
+kwota, deadline. Wykonane transze: `action: fill` + id pozycji, kwota, kurs.
+Zamknięcie: `action: close`.
 
-### Plany transz (warstwa decyzyjna)
+Lokalnie:
 
-| Score S | Plan |
-|---|---|
-| >= 60 | 70% dziś; 25% zlecenie/alert na 90. percentylu korzystności; reszta do ostatniego bezpiecznego dnia |
-| 20..60 | 45% dziś; 30% + 25% na poziomach 70. i 85. percentyla |
-| -20..20 | uczciwe DCA: 3-4 równe transze w konkretnych dniach, z pominięciem dni wydarzeń high-impact |
-| -60..-20 | tylko operacyjne minimum; alerty na 50. i 70. percentylu |
-| <= -60 | czekaj; alerty jak wyżej |
+```bash
+python main.py --add-position EURPLN sell 10000 2026-09-30 --note "faktura 123"
+python main.py --record-fill P260907-1 4000 4.3148
+python main.py --close-position P260907-1
+python main.py --list-positions
+```
 
-Poziomy zleceń są zawsze **lepsze niż dzisiejszy kurs** - gdy kurs jest już
-powyżej percentyla, poziom podnoszony jest o część oczekiwanego zakresu.
+Stan w `data/positions.json` (commitowany przez CI).
 
-**Twarda zasada deadline (zawsze aktywna):** całość musi być wymieniona do
-końca okna 14 dni. Plan nazywa ostatni dzień wykonania i nie może on wypadać
-w dniu wydarzenia high-impact dla pary (wtedy sesja wcześniej). Im mniej dni
-zostało, tym plany zbiegają do wykonania niezależnie od score (ostatnie
-3 sesje domykają liniowo).
+## Dane
 
-**Wydarzenia:** jeśli w oknie wypada wydarzenie high-impact dla pary, każdy
-plan mówi wprost, czy wykonać przed nim - asymetria: przy korzystnym poziomie
-zabezpieczenie zysku przed ryzykiem zdarzenia jest preferowane.
+| Źródło | Co | Uwagi |
+|---|---|---|
+| EBC SDMX (`data-api.ecb.europa.eu`) | fixing EUR/PLN, EUR/USD od 1999 | podstawa percentyli i backtestu; cache `data/history.json` (~7 000 sesji), przyrostowo |
+| Frankfurter, feed XML EBC | te same kursy | źródła zapasowe |
+| NBP API (tabela A) | fixing EUR, USD ~12:00 | drugi punkt dnia i kurs do księgowania; cache `data/nbp.json` |
+| EBC SDMX (stopa depozytowa), FRED (fed funds) | stopy do carry | `data/rates.json`; PLN z `config.POLICY_RATES` (NBP nie ma API stóp - podbij po decyzji RPP) |
+| `data/events_RRRR.yaml` | kalendarz | test CI wymaga pokrycia ≥ 30 dni naprzód dla każdej waluty |
 
-### Backtest (narzędzie musi się udowodnić)
+Gdy źródła kursów milczą, a cache ma ≤ 5 dni, raport powstaje z cache z bannerem.
 
-Walk-forward po całej cache'owanej historii: dla każdego możliwego okna
-14-dniowego symulowane są plany transz silnika dzień po dniu (sygnały
-przeliczane codziennie wyłącznie z danych dostępnych danego dnia, zlecenia
-z limitem wypełniane po poziomie - konserwatywnie, z twardą zasadą deadline).
-Benchmarki: wszystko 1. dnia / wszystko ostatniego dnia / równe DCA.
-Raport per para i kierunek: średnia przewaga vs DCA w punktach bazowych,
-hit-rate, liczba okien. Wyniki w `data/backtest.json`; pełny przelicz
-najwyżej raz na tydzień (cache), dzienny bieg zostaje szybki.
+## Kalendarz wydarzeń
 
-**Gdy przewaga vs DCA <= 0, panel wprost zaleca DCA dla tego kierunku** -
-plan zamieniany jest na harmonogram DCA z adnotacją w werdykcie.
+Format wpisu (parser: `data_layer.parse_events_yaml`, prosty podzbiór YAML):
+
+```yaml
+  - date: 2026-10-07        # dzień OGŁOSZENIA (posiedzenia: drugi dzień)
+    source: NBP             # NBP | ECB | Fed | BLS | GUS
+    name: Decyzja RPP ws. stop procentowych
+    currencies: [PLN]
+    impact: high            # high = omijany przez transze; medium = informacyjnie
+```
+
+- Dla `source: Fed` i `BLS` dzień reakcji to następna sesja (publikacja po
+  fixingu EBC).
+- Stan weryfikacji dat jest w komentarzach na górze każdego pliku. Na 2027
+  zweryfikowane są EBC i FOMC; RPP i BLS orientacyjne - sprawdź po publikacji
+  harmonogramów (XI-XII 2026).
+- Test `tests/test_events.py` wywala CI, gdy kalendarz sięga mniej niż 30 dni
+  naprzód dla którejś waluty.
+
+## Dostawcy
+
+`config.PROVIDERS` - spread w pb i opłata stała; `DEFAULT_PROVIDER` to Twój obecny
+dostawca. Linia na karcie pary porównuje oszczędność ze zmiany dostawcy z sufitem
+timingu z backtestu. Wpisz własne spready - domyślne są orientacyjne.
+
+## Backtest
+
+Walk-forward po pełnej historii: okna 10-sesyjne **rozłączne** (nakładające się
+zawyżają istotność ~3×). Dla każdego kierunku symulowany jest dawny silnik score
+(v2) i porównywany z równym DCA: średnia przewaga w pb, odchylenie, t, 90% CI,
+hit-rate. Osobno "ostatnie 2 lata" (okres strojenia v2). Przewaga jest uznana
+tylko, gdy dolna granica CI > 0. Wyniki w `data/backtest.json`, pełny przelicz
+raz na tydzień (cache) - dzienny bieg trwa sekundy.
 
 ## Uruchomienie lokalnie
 
-Wymaga tylko Pythona 3.9+.
+Python 3.9+, bez zależności.
 
 ```bash
-python main.py                    # realne dane EBC -> fx_report.html
-python main.py --demo             # dane syntetyczne (offline), podgląd
-python main.py --no-email         # bez wysyłki maila
-python main.py --force-backtest   # wymuś pełny przelicz backtestu
+python main.py                         # realne dane -> fx_report.html
+python main.py --demo                  # dane syntetyczne, offline
+python main.py --no-email
+python main.py --force-backtest        # pełny przelicz (~2 min)
 python main.py --out docs/index.html
-python -m unittest discover -s tests   # testy jednostkowe
+python -m unittest discover -s tests   # 62 testy
 ```
 
 ## Struktura
 
 ```
 fx-advisor/
-├── config.py           # wszystkie pokrętła (okna, wagi, progi, alerty)
-├── data_layer.py       # historia (cache przyrostowy) + parser kalendarza
-├── indicators.py       # czysta matematyka wskaźników (testowana)
-├── signals.py          # silnik sygnałów - raz na parę
-├── planner.py          # plany transz + symulator okna (wspólny z backtestem)
-├── backtest.py         # walk-forward backtest z cache
-├── report.py           # generator HTML (inline SVG, bez zależności)
-├── notify.py           # alerty Resend + zapis stanu
-├── main.py             # punkt wejścia / CLI
+├── config.py           # okna, stopy awaryjne, dostawcy, źródła, progi
+├── data_layer.py       # historia EBC (SDMX/Frankfurter/XML), NBP, stopy, kalendarz, pozycje
+├── indicators.py       # matematyka wskaźników
+├── signals.py          # kontekst rynkowy (percentyle, tendencja, zmienność)
+├── planner.py          # DCA + carry + dni reakcji + pozycje; legacy symulator do backtestu
+├── backtest.py         # okna rozłączne, CI, sufit timingu
+├── report.py           # HTML (inline SVG)
+├── notify.py           # alerty Resend
+├── main.py             # CLI + pozycje
 ├── data/
-│   ├── history.json    # ~420 sesji kursów (commitowane przez CI)
-│   ├── backtest.json   # wyniki backtestu (cache, commitowane przez CI)
-│   └── events_2026.yaml  # kalendarz wydarzeń makro
-├── tests/              # testy wskaźników i logiki deadline
+│   ├── history.json    # ~7 000 sesji EBC (CI)
+│   ├── nbp.json        # fixing NBP, 120 dni (CI)
+│   ├── rates.json      # stopy do carry (CI)
+│   ├── positions.json  # pozycje (CI + ręcznie)
+│   ├── backtest.json   # cache backtestu (CI)
+│   └── events_2026.yaml, events_2027.yaml
+├── tests/
 └── .github/workflows/fx-advisor.yml
 ```
 
-## Kalendarz wydarzeń (jak edytować)
-
-`data/events_2026.yaml` - decyzje RPP/EBC/FOMC, US CPI, polskie CPI
-(flash GUS + finalny), NFP. Format wpisu:
-
-```yaml
-  - date: 2026-07-08
-    source: NBP
-    name: Decyzja RPP ws. stop procentowych
-    currencies: [PLN]
-    impact: high
-```
-
-- `currencies` - waluty, na które wydarzenie wpływa (PLN/EUR/USD);
-  para jest dotknięta, gdy którakolwiek z jej walut jest na liście.
-- `impact: high` - dzień omijany przez transze DCA i termin końcowy planu;
-  `medium` - tylko informacyjnie w tabeli.
-- **Rok 2027**: dodaj plik `data/events_2027.yaml` w tym samym formacie -
-  narzędzie ładuje wszystkie pliki `data/events_*.yaml`.
-- Daty RPP na II półrocze 2026 i daty US CPI zweryfikuj okresowo z
-  oficjalnymi kalendarzami (nbp.pl, bls.gov) - w pliku są oznaczone
-  komentarzem jako orientacyjne.
-
 ## GitHub Actions + Pages
 
-Workflow `.github/workflows/fx-advisor.yml`: dni robocze ~08:30 i ~16:30
-czasu PL (po publikacji fixingu EBC). Odpala testy, generuje raport do
-`docs/index.html` i commituje raport + `data/history.json` +
-`data/backtest.json` + pliki stanu. GitHub Pages: Settings → Pages →
-źródło `/docs`.
+Workflow w dni robocze (cron 06:30 i 14:30 UTC; GitHub opóźnia o 1-5 h) oraz
+`workflow_dispatch` z komendami pozycji. Odpala testy, generuje raport do
+`docs/index.html`, commituje raport i pliki `data/`. GitHub Pages: źródło `/docs`.
 
 ### E-mail (Resend)
 
-Sekrety w Settings → Secrets and variables → Actions: `RESEND_API_KEY`,
-`FX_EMAIL_FROM`, `FX_EMAIL_TO`. Mail wychodzi, gdy:
+Sekrety: `RESEND_API_KEY`, `FX_EMAIL_FROM`, `FX_EMAIL_TO`. Mail wychodzi, gdy:
 
-1. score złożony któregoś kierunku przekroczy +/-60 (przejście przez próg),
-2. kurs wejdzie w górny/dolny decyl zakresu 250 sesji,
-3. jutro jest dzień wydarzenia high-impact dla pary z zaleconymi
-   (niewykonanymi) transzami.
+1. pozycja ma dziś transzę (kwota, kurs orientacyjny),
+2. pozycja jest po terminie albo deadline wypada jutro,
+3. jutro jest dzień reakcji na wydarzenie dla pary z otwartą pozycją,
+4. kurs wszedł w skrajny decyl roku (kontekst).
 
-Temat maila zawiera konkretną linię działania. Limit raz dziennie,
-chyba że pojawi się nowy powód.
+Temat zawiera konkretną linię działania. Raz dziennie, chyba że pojawi się nowy
+powód.
 
 ## Zastrzeżenie
 
-Kurs w horyzoncie 2 tygodni jest w dużej mierze nieprzewidywalny. Narzędzie
-porządkuje fakty, wymusza dyscyplinę transz i uczciwie raportuje własną
-skuteczność - nie jest prognozą ani poradą inwestycyjną. Decyzje podejmujesz
-samodzielnie.
+Na horyzoncie 2 tygodni kurs jest nieprzewidywalny - narzędzie tego nie udaje.
+Porządkuje fakty, wymusza dyscyplinę transz, liczy carry i pokazuje, gdzie są
+prawdziwe pieniądze (spread dostawcy). Kurs z fixingu jest orientacyjny. Nie jest
+to porada inwestycyjna. Decyzje podejmujesz samodzielnie.

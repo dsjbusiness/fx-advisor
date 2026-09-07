@@ -60,7 +60,7 @@ def score_components(values):
     trend = ind.clip(100.0 * math.tanh(t / config.TREND_TANH_SCALE))
 
     # --- mean reversion / pilnosc ---
-    rsi_v = ind.rsi(values, config.RSI_PERIOD)
+    rsi_v = ind.rsi(values[-config.RSI_LOOKBACK:], config.RSI_PERIOD)
     pctb = ind.bollinger_pctb(values, config.BOLL_N, config.BOLL_K)
     mr = _mr_urgency(rsi_v, pctb)
 

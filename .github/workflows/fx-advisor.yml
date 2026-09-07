@@ -2,13 +2,40 @@ name: FX Advisor
 
 on:
   schedule:
-    # Dni robocze (cron w UTC). Fixing EBC publikowany ~16:00 CET:
+    # Dni robocze (cron w UTC; GitHub opoznia biegi o 1-5 h). Fixing EBC ~16:00 CET.
     - cron: "30 6 * * 1-5"    # ~08:30 PL - poranny przeglad (ostatni fixing)
     - cron: "30 14 * * 1-5"   # ~16:30 PL - po publikacji fixingu EBC
-  workflow_dispatch: {}       # reczne uruchomienie z zakladki Actions
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Pozycja: none | add | fill | close"
+        type: choice
+        options: [none, add, fill, close]
+        default: none
+      pair:
+        description: "add: para (EURPLN, USDPLN, EURUSD)"
+        default: "EURPLN"
+      direction:
+        description: "add: sell (sprzedaj baze, np. EUR->PLN) | buy (kup baze)"
+        default: "sell"
+      amount:
+        description: "add: kwota w walucie zrodlowej | fill: kwota wykonanej transzy"
+        default: ""
+      deadline:
+        description: "add: deadline RRRR-MM-DD"
+        default: ""
+      position_id:
+        description: "fill/close: id pozycji (np. P260907-1)"
+        default: ""
+      rate:
+        description: "fill: kurs wykonania"
+        default: ""
+      note:
+        description: "add: notatka (np. numer faktury)"
+        default: ""
 
 permissions:
-  contents: write             # zapis raportu, historii i backtestu do repo
+  contents: write
 
 jobs:
   run:
@@ -22,13 +49,20 @@ jobs:
         with:
           python-version: "3.12"
 
-      # Testy jednostkowe (matematyka wskaznikow + logika deadline) - szybkie.
+      # Testy: wskazniki, planner, zrodla, backtest i STRAZNIK KALENDARZA
+      # (kalendarz musi siegac >= 30 dni naprzod, inaczej bieg pada).
       - name: Run unit tests
         run: python -m unittest discover -s tests
 
-      # Backtest: cache w data/backtest.json - pelny przelicz najwyzej raz
-      # na tydzien (albo przy zmianie wersji silnika / duzej paczce nowych
-      # sesji), wiec dzienny bieg pozostaje szybki.
+      - name: Position command
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action != 'none' }}
+        run: |
+          case "${{ inputs.action }}" in
+            add)   python main.py --add-position "${{ inputs.pair }}" "${{ inputs.direction }}" "${{ inputs.amount }}" "${{ inputs.deadline }}" --note "${{ inputs.note }}" ;;
+            fill)  python main.py --record-fill "${{ inputs.position_id }}" "${{ inputs.amount }}" "${{ inputs.rate }}" ;;
+            close) python main.py --close-position "${{ inputs.position_id }}" ;;
+          esac
+
       - name: Run FX Advisor
         env:
           FX_EMAIL_ENABLED: "1"
@@ -42,10 +76,10 @@ jobs:
         run: |
           git config user.name "fx-advisor-bot"
           git config user.email "bot@users.noreply.github.com"
-          # pliki stanu sa w .gitignore (blokuje przypadkowe lokalne commity);
-          # workflow jest jedynym miejscem, ktore ma je utrwalac -> -f
           git add docs/index.html data/history.json data/backtest.json
+          git add data/positions.json data/nbp.json data/rates.json
           git add -f fx_state.json
           [ -f fx_email_state.json ] && git add -f fx_email_state.json || true
           git commit -m "FX report $(date -u +%Y-%m-%d)" || echo "brak zmian"
+          git pull --rebase || true
           git push || echo "push nieudany (sprawdz permissions: contents: write)"
