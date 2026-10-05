@@ -1,296 +1,296 @@
 {
- "as_of": "2026-09-28",
+ "as_of": "2026-10-05",
  "engine_version": "3.0",
  "window_sessions": 10,
  "windows": "non-overlapping",
  "pairs": {
   "EURPLN": {
-   "n_sessions": 7102,
+   "n_sessions": 7107,
    "period": [
-    "1999-12-22",
-    "2026-09-28"
+    "1999-12-29",
+    "2026-10-05"
    ],
    "sell": {
     "engine": {
-     "edge_bps_vs_dca": -4.62,
-     "sd_bps": 60.8,
+     "edge_bps_vs_dca": -4.93,
+     "sd_bps": 53.1,
      "n_windows": 685,
-     "t_stat": -1.99,
-     "ci90_lo": -8.44,
-     "ci90_hi": -0.8,
-     "hit_rate_pct": 53.3,
+     "t_stat": -2.43,
+     "ci90_lo": -8.27,
+     "ci90_hi": -1.59,
+     "hit_rate_pct": 51.2,
      "verdict": "no_edge"
     },
     "day1": {
-     "edge_bps_vs_dca": 1.11,
-     "sd_bps": 87.9,
+     "edge_bps_vs_dca": -1.82,
+     "sd_bps": 86.1,
      "n_windows": 685,
-     "t_stat": 0.33,
-     "ci90_lo": -4.41,
-     "ci90_hi": 6.64,
-     "hit_rate_pct": 54.0,
+     "t_stat": -0.55,
+     "ci90_lo": -7.23,
+     "ci90_hi": 3.59,
+     "hit_rate_pct": 51.4,
      "verdict": "no_edge"
     },
     "lastday": {
-     "edge_bps_vs_dca": 3.68,
-     "sd_bps": 88.7,
+     "edge_bps_vs_dca": -2.21,
+     "sd_bps": 84.5,
      "n_windows": 685,
-     "t_stat": 1.09,
-     "ci90_lo": -1.9,
-     "ci90_hi": 9.25,
-     "hit_rate_pct": 47.3,
+     "t_stat": -0.69,
+     "ci90_lo": -7.52,
+     "ci90_hi": 3.1,
+     "hit_rate_pct": 46.1,
      "verdict": "no_edge"
     },
-    "ceiling_bps": 86.5,
-    "sd_lump_bps": 157.0,
-    "sd_dca_bps": 88.0,
+    "ceiling_bps": 86.3,
+    "sd_lump_bps": 146.4,
+    "sd_dca_bps": 86.7,
     "recent": {
-     "edge_bps_vs_dca": 1.02,
-     "sd_bps": 16.5,
+     "edge_bps_vs_dca": 2.13,
+     "sd_bps": 21.2,
      "n_windows": 50,
-     "t_stat": 0.44,
-     "ci90_lo": -2.81,
-     "ci90_hi": 4.86,
-     "hit_rate_pct": 62.0,
-     "verdict": "no_edge"
-    }
-   },
-   "buy": {
-    "engine": {
-     "edge_bps_vs_dca": -5.47,
-     "sd_bps": 49.7,
-     "n_windows": 685,
-     "t_stat": -2.88,
-     "ci90_lo": -8.6,
-     "ci90_hi": -2.35,
-     "hit_rate_pct": 49.3,
-     "verdict": "no_edge"
-    },
-    "day1": {
-     "edge_bps_vs_dca": -1.11,
-     "sd_bps": 87.9,
-     "n_windows": 685,
-     "t_stat": -0.33,
-     "ci90_lo": -6.64,
-     "ci90_hi": 4.41,
-     "hit_rate_pct": 46.0,
-     "verdict": "no_edge"
-    },
-    "lastday": {
-     "edge_bps_vs_dca": -3.68,
-     "sd_bps": 88.7,
-     "n_windows": 685,
-     "t_stat": -1.09,
-     "ci90_lo": -9.25,
-     "ci90_hi": 1.9,
-     "hit_rate_pct": 52.7,
-     "verdict": "no_edge"
-    },
-    "ceiling_bps": 79.3,
-    "sd_lump_bps": 157.0,
-    "sd_dca_bps": 88.0,
-    "recent": {
-     "edge_bps_vs_dca": 3.26,
-     "sd_bps": 17.9,
-     "n_windows": 50,
-     "t_stat": 1.28,
-     "ci90_lo": -0.92,
-     "ci90_hi": 7.43,
+     "t_stat": 0.71,
+     "ci90_lo": -2.8,
+     "ci90_hi": 7.06,
      "hit_rate_pct": 64.0,
      "verdict": "no_edge"
     }
-   }
-  },
-  "USDPLN": {
-   "n_sessions": 7102,
-   "period": [
-    "1999-12-22",
-    "2026-09-28"
-   ],
-   "sell": {
-    "engine": {
-     "edge_bps_vs_dca": -3.07,
-     "sd_bps": 70.9,
-     "n_windows": 685,
-     "t_stat": -1.13,
-     "ci90_lo": -7.53,
-     "ci90_hi": 1.39,
-     "hit_rate_pct": 53.3,
-     "verdict": "no_edge"
-    },
-    "day1": {
-     "edge_bps_vs_dca": 0.43,
-     "sd_bps": 134.8,
-     "n_windows": 685,
-     "t_stat": 0.08,
-     "ci90_lo": -8.05,
-     "ci90_hi": 8.9,
-     "hit_rate_pct": 54.2,
-     "verdict": "no_edge"
-    },
-    "lastday": {
-     "edge_bps_vs_dca": 5.95,
-     "sd_bps": 143.3,
-     "n_windows": 685,
-     "t_stat": 1.09,
-     "ci90_lo": -3.06,
-     "ci90_hi": 14.96,
-     "hit_rate_pct": 50.4,
-     "verdict": "no_edge"
-    },
-    "ceiling_bps": 140.4,
-    "sd_lump_bps": 250.0,
-    "sd_dca_bps": 135.6,
-    "recent": {
-     "edge_bps_vs_dca": -4.09,
-     "sd_bps": 45.5,
-     "n_windows": 50,
-     "t_stat": -0.64,
-     "ci90_lo": -14.67,
-     "ci90_hi": 6.49,
-     "hit_rate_pct": 54.0,
-     "verdict": "no_edge"
-    }
    },
    "buy": {
     "engine": {
-     "edge_bps_vs_dca": -8.74,
-     "sd_bps": 74.9,
+     "edge_bps_vs_dca": -3.29,
+     "sd_bps": 41.4,
      "n_windows": 685,
-     "t_stat": -3.05,
-     "ci90_lo": -13.45,
-     "ci90_hi": -4.03,
-     "hit_rate_pct": 49.6,
+     "t_stat": -2.08,
+     "ci90_lo": -5.89,
+     "ci90_hi": -0.68,
+     "hit_rate_pct": 50.9,
      "verdict": "no_edge"
     },
     "day1": {
-     "edge_bps_vs_dca": -0.43,
-     "sd_bps": 134.8,
+     "edge_bps_vs_dca": 1.82,
+     "sd_bps": 86.1,
      "n_windows": 685,
-     "t_stat": -0.08,
-     "ci90_lo": -8.9,
-     "ci90_hi": 8.05,
-     "hit_rate_pct": 45.8,
+     "t_stat": 0.55,
+     "ci90_lo": -3.59,
+     "ci90_hi": 7.23,
+     "hit_rate_pct": 48.6,
      "verdict": "no_edge"
     },
     "lastday": {
-     "edge_bps_vs_dca": -5.95,
-     "sd_bps": 143.3,
+     "edge_bps_vs_dca": 2.21,
+     "sd_bps": 84.5,
      "n_windows": 685,
-     "t_stat": -1.09,
-     "ci90_lo": -14.96,
-     "ci90_hi": 3.06,
-     "hit_rate_pct": 49.6,
+     "t_stat": 0.69,
+     "ci90_lo": -3.1,
+     "ci90_hi": 7.52,
+     "hit_rate_pct": 53.9,
      "verdict": "no_edge"
     },
-    "ceiling_bps": 134.5,
-    "sd_lump_bps": 250.0,
-    "sd_dca_bps": 135.6,
+    "ceiling_bps": 80.8,
+    "sd_lump_bps": 146.4,
+    "sd_dca_bps": 86.7,
     "recent": {
-     "edge_bps_vs_dca": 3.89,
-     "sd_bps": 40.8,
+     "edge_bps_vs_dca": -1.27,
+     "sd_bps": 15.7,
      "n_windows": 50,
-     "t_stat": 0.67,
-     "ci90_lo": -5.59,
-     "ci90_hi": 13.37,
+     "t_stat": -0.57,
+     "ci90_lo": -4.92,
+     "ci90_hi": 2.38,
      "hit_rate_pct": 56.0,
      "verdict": "no_edge"
     }
    }
   },
-  "EURUSD": {
-   "n_sessions": 7102,
+  "USDPLN": {
+   "n_sessions": 7107,
    "period": [
-    "1999-12-22",
-    "2026-09-28"
+    "1999-12-29",
+    "2026-10-05"
    ],
    "sell": {
     "engine": {
-     "edge_bps_vs_dca": -5.98,
-     "sd_bps": 55.5,
+     "edge_bps_vs_dca": -10.26,
+     "sd_bps": 83.8,
      "n_windows": 685,
-     "t_stat": -2.82,
-     "ci90_lo": -9.46,
-     "ci90_hi": -2.49,
-     "hit_rate_pct": 52.6,
+     "t_stat": -3.21,
+     "ci90_lo": -15.52,
+     "ci90_hi": -5.0,
+     "hit_rate_pct": 52.7,
      "verdict": "no_edge"
     },
     "day1": {
-     "edge_bps_vs_dca": 1.1,
-     "sd_bps": 98.2,
+     "edge_bps_vs_dca": -1.46,
+     "sd_bps": 138.2,
      "n_windows": 685,
-     "t_stat": 0.29,
-     "ci90_lo": -5.08,
-     "ci90_hi": 7.27,
-     "hit_rate_pct": 49.9,
+     "t_stat": -0.28,
+     "ci90_lo": -10.15,
+     "ci90_hi": 7.23,
+     "hit_rate_pct": 52.8,
      "verdict": "no_edge"
     },
     "lastday": {
-     "edge_bps_vs_dca": -1.75,
-     "sd_bps": 98.8,
+     "edge_bps_vs_dca": -2.21,
+     "sd_bps": 128.1,
      "n_windows": 685,
-     "t_stat": -0.46,
-     "ci90_lo": -7.96,
-     "ci90_hi": 4.46,
-     "hit_rate_pct": 48.8,
+     "t_stat": -0.45,
+     "ci90_lo": -10.26,
+     "ci90_hi": 5.84,
+     "hit_rate_pct": 47.3,
      "verdict": "no_edge"
     },
-    "ceiling_bps": 102.3,
-    "sd_lump_bps": 177.3,
-    "sd_dca_bps": 98.1,
+    "ceiling_bps": 140.6,
+    "sd_lump_bps": 233.1,
+    "sd_dca_bps": 140.0,
     "recent": {
-     "edge_bps_vs_dca": 3.72,
-     "sd_bps": 34.3,
+     "edge_bps_vs_dca": 8.65,
+     "sd_bps": 59.2,
      "n_windows": 50,
-     "t_stat": 0.77,
-     "ci90_lo": -4.26,
-     "ci90_hi": 11.69,
+     "t_stat": 1.03,
+     "ci90_lo": -5.13,
+     "ci90_hi": 22.43,
      "hit_rate_pct": 64.0,
      "verdict": "no_edge"
     }
    },
    "buy": {
     "engine": {
-     "edge_bps_vs_dca": -5.65,
-     "sd_bps": 50.8,
+     "edge_bps_vs_dca": -6.63,
+     "sd_bps": 71.8,
      "n_windows": 685,
-     "t_stat": -2.91,
-     "ci90_lo": -8.85,
-     "ci90_hi": -2.46,
+     "t_stat": -2.41,
+     "ci90_lo": -11.14,
+     "ci90_hi": -2.11,
+     "hit_rate_pct": 52.3,
+     "verdict": "no_edge"
+    },
+    "day1": {
+     "edge_bps_vs_dca": 1.46,
+     "sd_bps": 138.2,
+     "n_windows": 685,
+     "t_stat": 0.28,
+     "ci90_lo": -7.23,
+     "ci90_hi": 10.15,
+     "hit_rate_pct": 47.2,
+     "verdict": "no_edge"
+    },
+    "lastday": {
+     "edge_bps_vs_dca": 2.21,
+     "sd_bps": 128.1,
+     "n_windows": 685,
+     "t_stat": 0.45,
+     "ci90_lo": -5.84,
+     "ci90_hi": 10.26,
+     "hit_rate_pct": 52.7,
+     "verdict": "no_edge"
+    },
+    "ceiling_bps": 134.4,
+    "sd_lump_bps": 233.1,
+    "sd_dca_bps": 140.0,
+    "recent": {
+     "edge_bps_vs_dca": -14.98,
+     "sd_bps": 54.4,
+     "n_windows": 50,
+     "t_stat": -1.95,
+     "ci90_lo": -27.63,
+     "ci90_hi": -2.33,
+     "hit_rate_pct": 54.0,
+     "verdict": "no_edge"
+    }
+   }
+  },
+  "EURUSD": {
+   "n_sessions": 7107,
+   "period": [
+    "1999-12-29",
+    "2026-10-05"
+   ],
+   "sell": {
+    "engine": {
+     "edge_bps_vs_dca": -5.69,
+     "sd_bps": 52.4,
+     "n_windows": 685,
+     "t_stat": -2.84,
+     "ci90_lo": -8.99,
+     "ci90_hi": -2.4,
      "hit_rate_pct": 51.1,
      "verdict": "no_edge"
     },
     "day1": {
-     "edge_bps_vs_dca": -1.1,
-     "sd_bps": 98.2,
+     "edge_bps_vs_dca": 0.13,
+     "sd_bps": 98.0,
      "n_windows": 685,
-     "t_stat": -0.29,
-     "ci90_lo": -7.27,
-     "ci90_hi": 5.08,
-     "hit_rate_pct": 49.9,
+     "t_stat": 0.03,
+     "ci90_lo": -6.03,
+     "ci90_hi": 6.29,
+     "hit_rate_pct": 49.1,
      "verdict": "no_edge"
     },
     "lastday": {
-     "edge_bps_vs_dca": 1.75,
-     "sd_bps": 98.8,
+     "edge_bps_vs_dca": 0.32,
+     "sd_bps": 94.8,
      "n_windows": 685,
-     "t_stat": 0.46,
-     "ci90_lo": -4.46,
-     "ci90_hi": 7.96,
+     "t_stat": 0.09,
+     "ci90_lo": -5.64,
+     "ci90_hi": 6.28,
+     "hit_rate_pct": 51.2,
+     "verdict": "no_edge"
+    },
+    "ceiling_bps": 102.4,
+    "sd_lump_bps": 171.5,
+    "sd_dca_bps": 97.9,
+    "recent": {
+     "edge_bps_vs_dca": -13.9,
+     "sd_bps": 53.9,
+     "n_windows": 50,
+     "t_stat": -1.82,
+     "ci90_lo": -26.45,
+     "ci90_hi": -1.35,
+     "hit_rate_pct": 54.0,
+     "verdict": "no_edge"
+    }
+   },
+   "buy": {
+    "engine": {
+     "edge_bps_vs_dca": -7.04,
+     "sd_bps": 54.7,
+     "n_windows": 685,
+     "t_stat": -3.37,
+     "ci90_lo": -10.48,
+     "ci90_hi": -3.6,
      "hit_rate_pct": 51.1,
      "verdict": "no_edge"
     },
-    "ceiling_bps": 101.0,
-    "sd_lump_bps": 177.3,
-    "sd_dca_bps": 98.1,
+    "day1": {
+     "edge_bps_vs_dca": -0.13,
+     "sd_bps": 98.0,
+     "n_windows": 685,
+     "t_stat": -0.03,
+     "ci90_lo": -6.29,
+     "ci90_hi": 6.03,
+     "hit_rate_pct": 50.7,
+     "verdict": "no_edge"
+    },
+    "lastday": {
+     "edge_bps_vs_dca": -0.32,
+     "sd_bps": 94.8,
+     "n_windows": 685,
+     "t_stat": -0.09,
+     "ci90_lo": -6.28,
+     "ci90_hi": 5.64,
+     "hit_rate_pct": 48.8,
+     "verdict": "no_edge"
+    },
+    "ceiling_bps": 100.7,
+    "sd_lump_bps": 171.5,
+    "sd_dca_bps": 97.9,
     "recent": {
-     "edge_bps_vs_dca": -5.59,
-     "sd_bps": 40.7,
+     "edge_bps_vs_dca": 1.41,
+     "sd_bps": 38.7,
      "n_windows": 50,
-     "t_stat": -0.97,
-     "ci90_lo": -15.05,
-     "ci90_hi": 3.87,
-     "hit_rate_pct": 50.0,
+     "t_stat": 0.26,
+     "ci90_lo": -7.59,
+     "ci90_hi": 10.4,
+     "hit_rate_pct": 58.0,
      "verdict": "no_edge"
     }
    }
