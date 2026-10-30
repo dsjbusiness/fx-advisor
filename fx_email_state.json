@@ -1,6 +1,6 @@
 {
-  "last_sent_date": "2026-10-28",
-  "last_signature": "EUR/PLN: jutro dzien reakcji na Decyzja EBC ws. stop procentowych (ECB) - nie wymieniaj jutro; transze na dzis wykonaj dzis|P261019-1: wymień 3 667 USD → PLN po ~3.9563|P261019-2: wymień 667 EUR → PLN po ~4.4045|USD/PLN: jutro dzien reakcji na Decyzja FOMC ws. stop procentowych (Fed) - nie wymieniaj jutro; transze na dzis wykonaj dzis",
+  "last_sent_date": "2026-10-30",
+  "last_signature": "P261019-1: wymień 5 500 USD → PLN po ~3.9477|P261019-2: wymień 1 000 EUR → PLN po ~4.3938",
   "prev": {
     "EURPLN": {
       "decile": "top"
