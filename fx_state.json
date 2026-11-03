@@ -1318,7 +1318,7 @@
     "positions_open": 2
   },
   {
-    "ts": "2026-11-02 22:50",
+    "ts": "2026-11-03 14:32",
     "data_date": "2026-11-02",
     "p250": {
       "EURPLN": 100.0,
@@ -1330,6 +1330,6 @@
       "USDPLN": 3.9395,
       "EURUSD": 1.1216
     },
-    "positions_open": 2
+    "positions_open": 0
   }
 ]
