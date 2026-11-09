@@ -1391,5 +1391,20 @@
       "EURUSD": 1.1165
     },
     "positions_open": 0
+  },
+  {
+    "ts": "2026-11-09 16:44",
+    "data_date": "2026-11-09",
+    "p250": {
+      "EURPLN": 95.2,
+      "USDPLN": 95.6,
+      "EURUSD": 5.2
+    },
+    "rates": {
+      "EURPLN": 4.3843,
+      "USDPLN": 3.917,
+      "EURUSD": 1.1193
+    },
+    "positions_open": 0
   }
 ]
